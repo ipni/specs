@@ -32,12 +32,23 @@ retrieval address and protocol.
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Background](#background)
-- [Specification](#specification)
-    - [Security](#security)
-    - [Privacy and User Control](#privacy-and-user-control)
-- [Related Resources](#related-resources)
+* [Introduction](#introduction)
+* [Background](#background)
+    - [Motivation](#motivation)
+* [Terminology](#terminology)
+* [Specification](#specification)
+    - [Overview](#overview)
+    - [Ingestion](#ingestion)
+* [Advertisements](#advertisements)
+    - [Entries](#entries)
+    - [Metadata](#metadata)
+    - [ExtendedProvider](#extendedprovider)
+    - [Advertisement Transfer](#advertisement-transfer)
+    - [Announcements](#announcements)
+    - [Querying Records](#querying-records)
+* [Implementations](#implementations)
+* [Related Resources](#related-resources)
+* [Copyright](#copyright)
 
 ## Introduction
 

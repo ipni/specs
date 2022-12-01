@@ -39,13 +39,20 @@ retrieval address and protocol.
 * [Specification](#specification)
     - [Overview](#overview)
     - [Ingestion](#ingestion)
-* [Advertisements](#advertisements)
-    - [Entries](#entries)
-    - [Metadata](#metadata)
-    - [ExtendedProvider](#extendedprovider)
+    - [Advertisements](#advertisements)
+        - [Entries](#entries)
+        - [Metadata](#metadata)
+        - [ExtendedProvider](#extendedprovider)
     - [Advertisement Transfer](#advertisement-transfer)
+        - [Libp2p](#libp2p)
+        - [HTTP](#http)
     - [Announcements](#announcements)
+        - [GossupSub](#gossipsub)
+        - [HTTP](#http-1)
     - [Querying Records](#querying-records)
+        - [Find Providers by CID](#get-cidcid)
+        - [Find Providers by Multihash](#get-multihashmultihash)
+        - [Batch Find Providers](#post-multihash)
 * [Implementations](#implementations)
 * [Related Resources](#related-resources)
 * [Copyright](#copyright)
@@ -171,7 +178,7 @@ The indexer reads the advertisement chain starting from the head, reading previo
 until a previously seen advertisement, or the end of the chain, is reached. The advertisements and
 their entries are then processed in order from earliest to head.
 
-## Advertisements
+### Advertisements
 
 An Advertisement is represented as an IPLD node with the following schema:
 

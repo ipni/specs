@@ -4,7 +4,6 @@
 ​
 
 **Author(s)**:
-
 <!-- keep names alphabetically sorted -->
 ​
 - [Andrew Gillis](https://github.com/gammazero)
@@ -108,6 +107,8 @@ by re-ingesting advertisements chain from each publisher so that they can use it
 Doing that will require significant investment into infrastructure and will be eliminated as a possibility after *Writer's Privacy* upgrade.
 
 Reader's Privacy is a first step towards fully private content routing protocol. 
+
+Wider security implications are discussed in the IPFS Reader's Privacy specification: TODO link here.
 ​
 ## Related Resources
 ​

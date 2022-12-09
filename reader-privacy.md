@@ -75,7 +75,7 @@ on the diagram below:
 ​
 This specification improves the reader privacy by proposing changes to the Step 3, depicted above, where the client supplies the content CID directly in order to lookup its corresponding providers.
 
-In order to protect the reader's privacy the proposal is to change the way how CID lookup works to the following:
+In order to protect the reader's privacy the proposal changes the way CID lookup works to the following:
 
 * A client who wants to do a lookup will calculate a hash over the CID (`hash(CID)`) and use it for the
 lookup query (hence the name double hashing);

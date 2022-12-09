@@ -94,7 +94,7 @@ get hold of the decrypted `ProviderRecordKey` that isn't revealed during the com
 * Using the `hash(peerID)` from `ProviderRecordKey`s, the client would decrypt `ProviderRecord`s and then reach out to the 
 provider directly to fetch the desired content. 
 
-By utilising such scheme only a party that knows original CID that is being looked up can decode the protocol,
+By utilising such scheme only a party that knows original CID can decode the protocol,
 however that CID is never revealed. 
 
 ### Security

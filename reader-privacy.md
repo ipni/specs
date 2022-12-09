@@ -82,7 +82,7 @@ lookup query (hence the name double hashing);
 * In response to the hashed find request, the indexer will return a set of encrypted `ProviderRecordKey`s. 
 `ProviderRecordKey` will consist of two concatenated hashes - one over `peerID` and the other over `contextID`. 
 Each `ProviderRecordKey` will be encrypted with a key derived from the *original* CID value: 
-`enc(hash(peerID) || hash(contextID), CID)`, where `hash` is a hash over the value, `||` is concatenation 
+`enc(hash(peerID) || hash(contextID), CID)`, where `hash` is a hash over the value, and `||` is concatenation 
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
 to get hold of the original CID that isn't revealed during the communication round;
 * Using the original CID, the client would decrypt `ProviderRecordKey`s and then calculate another hash

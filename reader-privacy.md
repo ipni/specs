@@ -2,8 +2,9 @@
 ​
 ![wip](https://img.shields.io/badge/status-wip-orange.svg?style=flat-square)
 ​
+
 **Author(s)**:
-​
+
 <!-- keep names alphabetically sorted -->
 ​
 - [Andrew Gillis](https://github.com/gammazero)
@@ -11,6 +12,7 @@
 - [Masih Derkani](https://github.com/masih)
 - [Will Scott](https://github.com/willscott)
 ​
+
 **Maintainer(s)**:
 ​
 - [Andrew Gillis](https://github.com/gammazero)
@@ -21,7 +23,7 @@
 * * *
 ​
 **Abstract**
-​
+
 The lookup APIs provided by IPNI nodes are able to observe what data is being accessed by the clients.
 This is true regardless of whether the data itself is public or not. Because IPNI nodes continuously
 catalogue the content hosted by all the providers, and provide a central lookup API the need for
@@ -35,7 +37,7 @@ to IPNI in order to preserve the reader's privacy while continuing to facilitate
 provider lookup.
 ​
 ## Table of Contents
-​
+
 - [Introduction](#introduction)
 - [Background](#background)
 - [Specification](#specification)

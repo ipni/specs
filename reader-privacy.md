@@ -107,7 +107,7 @@ Doing that will require significant resources as it involves crawling the entire
 
 Reader Privacy is a first step towards fully private content routing protocol. 
 
-Wider security implications are discussed in the IPFS Reader's Privacy specification: TODO link here.
+Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
 ​
 ## Related Resources
 ​

@@ -59,7 +59,7 @@ fully private IPNI protocol that will eliminate indexers as centralised observer
 
 ### Non Goals
 
-* Writer's (publisher's) Privacy, which is going to be done as a separate specification;
+* Writer, i.e. content provider or publisher, Privacy, which will be done in a separate specification
 * Client to Provider privacy, that is out of scope for the content routing subsystem.
 ​
 ## Background

@@ -105,7 +105,7 @@ That is going to change once *Writer Privacy* is implemented. Until then, an att
 by re-ingesting advertisements chain from each publisher in order to collect all original CIDs which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
-Reader's Privacy is a first step towards fully private content routing protocol. 
+Reader Privacy is a first step towards fully private content routing protocol. 
 
 Wider security implications are discussed in the IPFS Reader's Privacy specification: TODO link here.
 ​

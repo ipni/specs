@@ -112,6 +112,7 @@ sequenceDiagram
         client->>indexer: sends ProviderRecord lookup request for hash(hash(peerID))
         indexer->>client: sends a ProviderRecord encrypted with a key derived from hash(peerID)
         client->>client: decrypts the ProviderRecord
+    end
     client->>provider: reaches out to the provider for the desired content
 ```
 

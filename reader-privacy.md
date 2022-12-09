@@ -100,7 +100,7 @@ and that CID is never revealed.
 ### Security
 ​
 Security model of the Reader Privacy proposal boils down to inability to *algorithmically* derive the original CID value for a 
-`hash(CID)` that is used for IPNI lookups. Right now indexer advertisments are not encrypted, but authenticated and contain plain CID values in them. 
+`hash(CID)` that is used for IPNI lookups. Right now advertisments are not encrypted, but authenticated and contain plain CID values in them. 
 That is going to change once *Writer Privacy* is implemented. Until then, an attacker could build a map of `hash(CID) -> CID` 
 by re-ingesting advertisements chain from each publisher in order to collect all original CIDs which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.

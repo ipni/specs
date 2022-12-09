@@ -73,19 +73,20 @@ on the diagram below:
 
 ## Specification
 ​
-This specification improves the reader privacy by proposing changes to the Step 3, depicted above, where the client supplies the content CID directly in order to lookup its corresponding providers.
+This specification improves the reader privacy by proposing changes to the Step 3, depicted above, where the client 
+supplies the content CID directly in order to lookup its corresponding providers.
 
 In order to protect the reader's privacy the proposal changes the way CID lookup works to the following:
 
-* A client who wants to do a lookup will calculate a hash over the CID (`hash(CID)`) and use it for the
+* A client who wants to do a lookup will calculate a hash over the CID's multihash (`hash(MH)`) and use it for the
 lookup query (hence the name double hashing);
 * In response to the hashed find request, the indexer will return a set of encrypted `ProviderRecordKey`s. 
 `ProviderRecordKey` will consist of two concatenated hashes - one over `peerID` and the other over `contextID`. 
-Each `ProviderRecordKey` will be encrypted with a key derived from the *original* CID value: 
-`enc(hash(peerID) || hash(contextID), CID)`, where `hash` is a hash over the value, and `||` is concatenation 
+Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
+`enc(hash(peerID) || hash(contextID), MH)`, where `hash` is a hash over the value, and `||` is concatenation 
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
 to get hold of the original CID that isn't revealed during the communication round;
-* Using the original CID, the client would decrypt `ProviderRecordKey`s and then calculate another hash
+* Using the original multihash, the client would decrypt `ProviderRecordKey`s and then calculate another hash
 over the decrypted `hash(peerID)` part of it. Using that hash for each `ProviderRecordKey` the client would do another lookup 
 to get an encrypted `ProviderRecord` in response. `ProviderRecord` will contain information about provider, 
 such as it's *peerID*, *multiaddrs*, *supported protocols* and so on. Each `ProviderRecord` will be encrypted 
@@ -97,12 +98,30 @@ provider directly to fetch the desired content.
 By utilising such scheme only a party that knows original CID can decode the protocol,
 and that CID is never revealed. 
 
+
+```mermaid
+sequenceDiagram
+    participant client
+    participant indexer
+    participant provider
+    client->>client: calculates hash(MH)
+    client->>indexer: sends a find request for hash(MH)
+    indexer->>client: sends a list of [ProviderRecordKey], each encrypted with a key derived from MH
+    loop ProviderRecordKeys
+        client->>client: decrypts ProviderRecordKey and extracts hash(peerID) from it
+        client->>indexer: sends ProviderRecord lookup request for hash(hash(peerID))
+        indexer->>client: sends a ProviderRecord encrypted with a key derived from hash(peerID)
+        client->>client: decrypts the ProviderRecord
+    client->>provider: reaches out to the provider for the desired content
+```
+
+
 ### Security
 ​
-Security model of the Reader Privacy proposal boils down to inability to *algorithmically* derive the original CID value for a 
-`hash(CID)` that is used for IPNI lookups. Right now advertisments are not encrypted, but authenticated and contain plain CID values in them. 
-That is going to change once *Writer Privacy* is implemented. Until then, an attacker could build a map of `hash(CID) -> CID` 
-by re-ingesting advertisements chain from each publisher in order to collect all original CIDs which can then be used to decrypt provider records and so on. 
+Security model of the Reader Privacy proposal boils down to inability to *algorithmically* derive the original multihash value for a 
+`hash(multihash)` that is used for IPNI lookups. Right now advertisments are not encrypted, but authenticated and contain plain multihash values in them. 
+That is going to change once *Writer Privacy* is implemented. Until then, an attacker could build a map of `hash(multihash) -> multihash` 
+by re-ingesting advertisements chain from each publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
 Reader Privacy is a first step towards fully private content routing protocol. 

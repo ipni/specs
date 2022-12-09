@@ -88,7 +88,7 @@ to get hold of the original CID that isn't revealed during the communication rou
 * Using the original CID, the client would decrypt `ProviderRecordKey`s and then calculate another hash
 over the decrypted `hash(peerID)` part of it. Using that hash for each `ProviderRecordKey` the client would do another lookup 
 to get an encrypted `ProviderRecord` in response. `ProviderRecord` will contain information about provider, 
-such as it's *peerID*, *multiaddresses*, *supported protocols* and etc. Each `ProviderRecord` will be encrypted 
+such as it's *peerID*, *multiaddrs*, *supported protocols* and so on. Each `ProviderRecord` will be encrypted 
 with a key derived from `hash(peerID)`. In order to make sense of that payload, a passive observer would need to 
 get hold of the decrypted `ProviderRecordKey` that isn't revealed during the communication round;
 * Using the `hash(peerID)` from `ProviderRecordKey`s, the client would decrypt `ProviderRecord`s and then reach out to the 

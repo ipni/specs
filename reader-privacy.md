@@ -95,7 +95,7 @@ get hold of the decrypted `ProviderRecordKey` that isn't revealed during the com
 provider directly to fetch the desired content. 
 
 By utilising such scheme only a party that knows original CID can decode the protocol,
-however that CID is never revealed. 
+and that CID is never revealed. 
 
 ### Security
 ​

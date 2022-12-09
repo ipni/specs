@@ -73,8 +73,7 @@ on the diagram below:
 
 ## Specification
 ​
-This specification focuses on improving the **step #3** where a client has to pass a CID to the indexer *in open* 
-to get a list of providers where the content can be fetched from. 
+This specification improves the reader privacy by proposing changes to the Step 3, depicted above, where the client supplies the content CID directly in order to lookup its corresponding providers.
 
 In order to protect the reader's privacy the proposal is to change the way how CID lookup works to the following:
 

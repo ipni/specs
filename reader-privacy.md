@@ -81,18 +81,18 @@ In order to protect the reader's privacy the proposal changes the way CID lookup
 * A client who wants to do a lookup will calculate a hash over the CID's multihash (`hash(MH)`) and use it for the
 lookup query (hence the name double hashing);
 * In response to the hashed find request, the indexer will return a set of encrypted `ProviderRecordKey`s. 
-`ProviderRecordKey` will consist of two concatenated hashes - one over `peerID` and the other over `contextID`. 
+`ProviderRecordKey` will consist of the `peerID` concatenated with a hash over `contextID`. 
 Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
-`enc(hash(peerID) || hash(contextID), MH)`, where `hash` is a hash over the value, and `||` is concatenation 
+`enc(peerID || hash(contextID), MH)`, where `hash` is a hash over the value, and `||` is concatenation 
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
 to get hold of the original CID that isn't revealed during the communication round;
-* Using the original multihash, the client would decrypt `ProviderRecordKey`s and then calculate another hash
-over the decrypted `hash(peerID)` part of it. Using that hash for each `ProviderRecordKey` the client would do another lookup 
-to get an encrypted `ProviderRecord` in response. `ProviderRecord` will contain information about provider, 
+* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate a hash
+over the decrypted `peerID` part of it. Using such hash for each `ProviderRecordKey` the client would do another lookup 
+to get an encrypted `ProviderRecord` in response. `ProviderRecord` will contain information about the provider, 
 such as it's *peerID*, *multiaddrs*, *supported protocols* and so on. Each `ProviderRecord` will be encrypted 
-with a key derived from `hash(peerID)`. In order to make sense of that payload, a passive observer would need to 
-get hold of the decrypted `ProviderRecordKey` that isn't revealed during the communication round;
-* Using the `hash(peerID)` from `ProviderRecordKey`s, the client would decrypt `ProviderRecord`s and then reach out to the 
+with a key derived from `peerID`. In order to make sense of that payload, a passive observer would need to 
+get hold of the original `peerID` that isn't revealed during the communication round;
+* Using a key derived from `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
 provider directly to fetch the desired content. 
 
 By utilising such scheme only a party that knows original CID can decode the protocol,
@@ -108,9 +108,9 @@ sequenceDiagram
     client->>indexer: sends a find request for hash(MH)
     indexer->>client: sends a list of [ProviderRecordKey], each encrypted with a key derived from MH
     loop ProviderRecordKeys
-        client->>client: decrypts ProviderRecordKey and extracts hash(peerID) from it
-        client->>indexer: sends ProviderRecord lookup request for hash(hash(peerID))
-        indexer->>client: sends a ProviderRecord encrypted with a key derived from hash(peerID)
+        client->>client: decrypts ProviderRecordKey and extracts peerID from it
+        client->>indexer: sends ProviderRecord lookup request for hash(peerID)
+        indexer->>client: sends a ProviderRecord encrypted with a key derived from peerID
         client->>client: decrypts the ProviderRecord
     end
     client->>provider: reaches out to the provider for the desired content

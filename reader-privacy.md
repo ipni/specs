@@ -41,6 +41,8 @@ provider lookup.
 - [Background](#background)
 - [Specification](#specification)
     - [Security](#security)
+        - [Hashing and Encryption Function Upgrades](#hashing-and-encryption-function-upgrades)
+    - [Trade Offs](#trade-offs)
 - [Related Resources](#related-resources)
 ​
 ## Introduction
@@ -128,7 +130,42 @@ Doing that will require significant resources as it involves crawling the entire
 Reader Privacy is a first step towards fully private content routing protocol. 
 
 Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
-​
+
+#### Hashing and Encryption Function Upgrades
+
+All multihashes have a codec encoded in them. If a hashing or encryption funciton will have to rotate then different types of multihahses can coexist together
+and can be processed differently by IPNI implementations. It won't be possible to apply a fix retroactivelly to the data returned by previous lookup requests, 
+however IPNI implementations should start blocking all new ones that use a compromised scheme.
+
+Moving an IPNI implementation to a new hash / encryption function will involve reingesting all data from a scratch. Before Writer Privacy is impemented the 
+index can be migrated over to new functions by reingesting all advertisement chains. With Writer Privacy, Publishers will have to republish advertisments 
+using new algorithms. Both old and new scheme can coexist together for some time. The old one should be retired either immediately or once
+the indexes have been rebuilt and the users have been migrated over. 
+
+Exact operation procedure will be different for differnet IPNI implementations.
+
+### Trade Offs 
+
+* **Multiple lookups**. In the simplest scenario Reader Privacy protocol will require at least two roundtrips to find provider details for a given CID.
+It can be reduced down to one by caching `ProviderRecord`s locally at the client side. That would eliminate a need in a lookup
+per decrypted `ProviderRecordKey`. In the future there can be a separate service that distributes `PeerID` to `Multiaddresses` mappings in open.
+That dataset can be periodically downloaded by all clients and cached locally;
+
+* **Extra compute**. At minimum, clients will require to perform an extra hashing per CID and decryption per `ProviderRecordKey` that will add
+some overhead to each lookup. That overhead can be initially offloaded to the server but will have to be done by clients eventually (explained below);
+
+* **Extra storage space**. Storing encrypted data will require more space due to paddings and nonce;
+
+* **Bulk deletes**. Encrypted `PeerID` will be different for each multihash and hence bulk delete operations (delete everything for a provider X) will not be possible.
+
+* **Operational overhead**. Reader Privacy roll out will be a gradual process as many clients will have to migrate over. During the transition period 
+IPNI implementations will have to serve both plain and hashed lookups. That will involve either:   
+    - spinning up separate IPNI instances for hashed queries or;
+    - serving hashed and regular queries from the same instances using encrypted dataset. That means that servers will have to do decryption on behalf of their clients
+    using a plain multihash that has been provided in the lookup request;
+
+* **Data Migration**. Existing indexes will have to undergo data migration or to be wiped out complletely and rebuilt again. 
+
 ## Related Resources
 ​
 TODO: link to corresponding IPFS spec once materialised.

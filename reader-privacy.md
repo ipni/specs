@@ -43,6 +43,7 @@ provider lookup.
     - [Security](#security)
         - [Hashing and Encryption Function Upgrades](#hashing-and-encryption-function-upgrades)
     - [Trade Offs](#trade-offs)
+    - [Threat Modelling](#threat-modelling)
 - [Related Resources](#related-resources)
 ​
 ## Introduction
@@ -166,7 +167,7 @@ IPNI implementations will have to serve both plain and hashed lookups. That will
 
 * **Data Migration**. Existing indexes will have to undergo data migration or to be wiped out complletely and rebuilt again. 
 
-### Threat Modeling
+### Threat Modelling
 
 There are three actors involved into the IPNI workflow: provider, client and indexer. Providers update index by publishing advertisements.
 Indexer advertisements are signed by their publishers and can be verified for authenticity. Advertisements are organised in a chain and are ingested strictly in order. 

@@ -166,6 +166,25 @@ IPNI implementations will have to serve both plain and hashed lookups. That will
 
 * **Data Migration**. Existing indexes will have to undergo data migration or to be wiped out complletely and rebuilt again. 
 
+### Threat Modeling
+
+There are three actors involved into the IPNI workflow: provider, client and indexer. Providers update index by publishing advertisements.
+Indexer advertisements are signed by their publishers and can be verified for authenticity. Advertisements are organised in a chain and are ingested strictly in order. 
+It's not possible to change the order wihtout having to create a new chain. Advertisements processing is idempotent - re-ingesting the same advertismeent twice 
+shouldn't affect the indexer's state. The IPNI specification is agnostic to transport protocols so particular protocol choice is up to the implementation. 
+Compromised publisher's identity is out of scope of this specification.
+
+Clients consume index by performing CID lookups. This specification introduces additional hashing and encryption that aim to prevent a passive observer
+from being able to figure out what data is being looked up by spying at the client to indexer traffic. The exact communicaton protocol is out of scope for this specification 
+however it should be chosen carefully to prevent MITM attacks. A passive observer could deobfuscate the content by building a `hash(Multihash)` to `Multihash` map.
+That can be done before the Writer's Privacy upgrade however will not be possible eventually as mentioned in the [Security](#security) section. 
+
+Provider records returned to client lookups do not contain any authentication data. It's possible for a malicious / buggy indexer to  
+present a wrong dataset to the client. Clients can tackle that problem by excluding such indexers from their pool. Returning wrong datasets will
+eventually affect the indexer's reputation score - these efforts are already in progress. Data integrity is inbuilt into IPFS - clients
+can verify that the data returned by a storage provider matches the CID. So even if indexer get compromised that will not compromise
+the data itself. 
+
 ## Related Resources
 ​
 TODO: link to corresponding IPFS spec once materialised.

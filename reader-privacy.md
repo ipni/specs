@@ -134,7 +134,7 @@ Wider security implications are discussed in the IPFS Reader Privacy specificati
 
 #### Hashing and Encryption Function Upgrades
 
-All multihashes have a codec encoded in them. If a hashing or encryption funciton will have to rotate then different types of multihahses can coexist together
+All multihashes have a codec encoded in them. If a hashing or encryption function will have to rotate then different types of multihashes can coexist together
 and can be processed differently by IPNI implementations. It won't be possible to apply a fix retroactivelly to the data returned by previous lookup requests, 
 however IPNI implementations should start blocking all new ones that use a compromised scheme.
 

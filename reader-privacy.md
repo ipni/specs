@@ -122,9 +122,9 @@ sequenceDiagram
 
 ### Security
 ​
-Security model of the Reader Privacy proposal boils down to inability to *algorithmically* derive the original multihash value for a 
-`hash(multihash)` that is used for IPNI lookups. Right now advertisments are not encrypted, but authenticated and contain plain multihash values in them. 
-That is going to change once *Writer Privacy* is implemented. Until then, an attacker could build a map of `hash(multihash) -> multihash` 
+Security model of the Reader Privacy proposal boils down to inability of an attacker to *algorithmically* derive the original multihash value from 
+`hash(multihash)` that is used for IPNI lookups. IPNI advertisments are not encrypted, but authenticated and contain plain multihash values in them.
+Before Writer Privacy is implemented an attacker could build a map of `hash(multihash) -> multihash` 
 by re-ingesting advertisements chain from each publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
@@ -138,17 +138,17 @@ All multihashes have a codec encoded in them. If a hashing or encryption funcito
 and can be processed differently by IPNI implementations. It won't be possible to apply a fix retroactivelly to the data returned by previous lookup requests, 
 however IPNI implementations can start blocking all new ones that use a compromised scheme, allowing some transtition period. 
 
-Moving an IPNI implementation to a new hash / encryption function will involve reingesting all data from a scratch. Before Writer Privacy is impemented the 
-index can be migrated over to new functions by reingesting all advertisement chains. With Writer Privacy, Publishers will have to republish advertisments 
-using new algorithms. Both old and new scheme can coexist together for some time. The old one should be retired either immediately or once
-the indexes have been rebuilt and the users have been migrated over. 
+Moving an IPNI implementation to a new hash / encryption function will require reingesting all data from a scratch. Before Writer Privacy is impemented the 
+index can be migrated over to new functions by reingesting existing advertisement chains. With Writer Privacy, Publishers will have to republish advertisments 
+using new functions (as the data in the advertisements themselves will have to be re-hashed / re-encrypted). Both old and new scheme can coexist together for some time. 
+The old scheme should be retired either immediately or once the indexes have been rebuilt and the users have been migrated over. 
 
-Exact operation procedure will be different for differnet IPNI implementations.
+An exact operational procedure will be different for differnet IPNI implementations.
 
 ### Trade Offs 
 
 * **Multiple lookups**. In the simplest scenario Reader Privacy protocol will require at least two roundtrips to find provider details for a given CID.
-It can be reduced down to one by caching `ProviderRecord`s locally at the client side. That would eliminate a need in a lookup
+It can be reduced down to one by caching `ProviderRecord`s at the client side, which would eliminate a need in a lookup
 per decrypted `ProviderRecordKey`. In the future there can be a separate service that distributes `PeerID` to `Multiaddresses` mappings in open.
 That dataset can be periodically downloaded by all clients and cached locally;
 
@@ -170,15 +170,15 @@ IPNI implementations will have to serve both plain and hashed lookups. That will
 ### Threat Modelling
 
 There are three actors involved into the IPNI workflow: provider, client and indexer. Providers update index by publishing advertisements.
-Indexer advertisements are signed by their publishers and can be verified for authenticity. Advertisements are organised in a chain and are ingested strictly in order. 
-It's not possible to change the order wihtout having to create a new chain. Advertisements processing is idempotent - re-ingesting the same advertismeent twice 
+Indexer advertisements are signed by their publishers and can be authenticated. Advertisements are organised in a chain and are ingested strictly in order. 
+It's not possible to reorder advertisements wihtout forking the chain. Advertisements processing is idempotent - re-ingesting the same advertismeent twice 
 shouldn't affect the indexer's state. The IPNI specification is agnostic to transport protocols so particular protocol choice is up to the implementation. 
 Compromised publisher's identity is out of scope of this specification.
 
 Clients consume index by performing CID lookups. This specification introduces additional hashing and encryption that aim to prevent a passive observer
-from being able to figure out what data is being looked up by spying at the client to indexer traffic. The exact communicaton protocol is out of scope for this specification 
-however it should be chosen carefully to prevent MITM attacks. A passive observer could deobfuscate the content by building a `hash(Multihash)` to `Multihash` map.
-That can be done before the Writer's Privacy upgrade however will not be possible eventually as mentioned in the [Security](#security) section. 
+from being able to infer what data is being looked up by spying at the client to indexer traffic. The exact communicaton protocol is out of scope for this specification 
+however it should be chosen carefully to prevent MITM attacks. Before Writer Privacy upgrade a passive observer could deobfuscate the content by building a `hash(Multihash)` to `Multihash` map.
+That however will not be possible eventually as mentioned in the [Security](#security) section. 
 
 Provider records returned to client lookups do not contain any authentication data. It's possible for a malicious / buggy indexer to  
 present a wrong dataset to the client. Clients can tackle that problem by excluding such indexers from their pool. Returning wrong datasets will

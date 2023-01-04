@@ -292,6 +292,11 @@ Specified protocols are expected to be ordered in increasing order.
 * http
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.
+* Named Record
+    * Protocol `uvarint` is <TBD> in the multicodec table
+    * the following bytes should be a dag-cbor encoded struct of:
+        * Name, a string
+        * Record, a valid dag-cbor type
 
 #### ExtendedProvider
 

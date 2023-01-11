@@ -294,9 +294,10 @@ Specified protocols are expected to be ordered in increasing order.
     * the following bytes are not yet defined.
 * Named Record
     * Protocol `uvarint` is <TBD> in the multicodec table
-    * the following bytes should be a dag-cbor encoded struct of:
-        * Name, a string
-        * Record, a valid dag-cbor type
+    * the following bytes should be:
+        * `uvarint` of the number of bytes in the name followed by the Name in bytes.
+            * Name should be a UTF-8 string
+        * `uvarint` of the number of bytes in the record followed by the Record bytes
 
 #### ExtendedProvider
 

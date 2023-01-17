@@ -11,7 +11,7 @@ to derive an encryption key versus derive a lookup key) a constant string can be
 
 All hashed data that is used for lookups must be of `Multihash` format with `SHA_256` codec. Double hashed data must use `DBL_SHA_256` codec.
 
-Multihashes must be prepended with `DBL_SHA_256` before calculating a second hash. Unhashed data must be prepended with `SHA_256` before calculating the first hash.
+Multihashes must be prepended with `CR_DOUBLEHASH` before calculating a second hash. Unhashed data must be prepended with `CR_HASH` before calculating the first hash.
 
 ## Encryption
 

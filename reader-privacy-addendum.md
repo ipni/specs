@@ -3,6 +3,7 @@
 This addendum goes through Reader Privacy protocol, hashing and cryptography choices as well as explains some less obvious details 
 for the implementations to consider.
 
+
 ## Hashing
 
 IPNI expects SHA256 as a hashing function. To avoid collisions between the hashes calculated from the same value but for different purposes (for example

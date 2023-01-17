@@ -45,6 +45,8 @@ provider lookup.
     - [Trade Offs](#trade-offs)
     - [Threat Modelling](#threat-modelling)
 - [Related Resources](#related-resources)
+
+For more technical implementation details please see the [Addendum](reader-privacy-addendum.md).
 ​
 ## Introduction
 ​
@@ -84,9 +86,9 @@ In order to protect the reader's privacy the proposal changes the way CID lookup
 * A client who wants to do a lookup will calculate a hash over the CID's multihash (`hash(MH)`) and use it for the
 lookup query (hence the name double hashing);
 * In response to the hashed find request, the indexer will return a set of encrypted `ProviderRecordKey`s. 
-`ProviderRecordKey` will consist of the `peerID` concatenated with a hash over `contextID`. 
+`ProviderRecordKey` will consist of the `peerID` concatenated with `contextID`. 
 Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
-`enc(peerID || hash(contextID), MH)`, where `hash` is a hash over the value, and `||` is concatenation 
+`enc(peerID || contextID, MH)`, where `hash` is a hash over the value, and `||` is concatenation 
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
 to get hold of the original CID that isn't revealed during the communication round;
 * Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate a hash
@@ -97,10 +99,12 @@ with a key derived from `peerID`. In order to make sense of that payload, a pass
 get hold of the original `peerID` that isn't revealed during the communication round;
 * Using a key derived from `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
 provider directly to fetch the desired content. 
+* The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements.
+That will require another lookup by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
+*This step will not be required for IPFS as Bitswap protocol is assumed implicitly.*
 
 By utilising such scheme only a party that knows original CID can decode the protocol,
 and that CID is never revealed. 
-
 
 ```mermaid
 sequenceDiagram
@@ -115,6 +119,9 @@ sequenceDiagram
         client->>indexer: sends ProviderRecord lookup request for hash(peerID)
         indexer->>client: sends a ProviderRecord encrypted with a key derived from peerID
         client->>client: decrypts the ProviderRecord
+        client->>indexer: [Optional] sends Metadata lookup request for hash(ProviderRecordKey) 
+        indexer->>client: [Optional] sends Metadata encrypted with a key derived from ProviderRecordKey
+        client->>client: [Optional] decrypts the Metadata
     end
     client->>provider: reaches out to the provider for the desired content
 ```
@@ -142,6 +149,8 @@ Moving an IPNI implementation to a new hash / encryption function will require r
 index can be migrated over to new functions by reingesting existing advertisement chains. With Writer Privacy, Publishers will have to republish advertisments 
 using new functions (as the data in the advertisements themselves will have to be re-hashed / re-encrypted). Both old and new scheme can coexist together for some time. 
 The old scheme should be retired either immediately or once the indexes have been rebuilt and the users have been migrated over. 
+
+Encrypted values will be expected to have algorithm and nonce encoded in them so that encryption function rotation doesn't require coordinated client upgrade.
 
 An exact operational procedure will be different for differnet IPNI implementations.
 

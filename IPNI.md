@@ -293,6 +293,8 @@ Specified protocols are expected to be ordered in increasing order.
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.
 
+If the `Metadata` field is not specified, the advertisement is treated as address update only.
+
 #### ExtendedProvider
 
 The `ExtendedProvider` field allows for specification of provider families, in cases where a
@@ -315,6 +317,9 @@ type Provider struct {
 
 * If `Metadata` is not specified for a `Provider`, the metadata from the
   encapsulating  `Advertisement` will be used instead.
+  * If `Metadata` in encapsulating advertisement is not specified, the extended provider record 
+    is treated as address update only.
+* If `Addresses` are not specified, the record will be skipped and has no effect. 
 * If a `Provider` listing is written with no `ContextID`, those peers will be returned for all
   advertisements published by the publisher.
     * If `Override` is set on an `ExtendedProvider` entry on an advertisement with a `ContextID`, it

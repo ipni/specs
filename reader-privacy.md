@@ -154,8 +154,6 @@ index can be migrated over to new functions by reingesting existing advertisemen
 using new functions (as the data in the advertisements themselves will have to be re-hashed / re-encrypted). Both old and new scheme can coexist together for some time. 
 The old scheme should be retired either immediately or once the indexes have been rebuilt and the users have been migrated over. 
 
-Encrypted values will be expected to have algorithm and nonce encoded in them so that encryption function rotation doesn't require coordinated client upgrade.
-
 An exact operational procedure will be different for differnet IPNI implementations.
 
 ### Trade Offs 
@@ -223,7 +221,7 @@ That means that the IV needs to be deterministically chosen so that `enc(IV, pas
 passpharase + payload pair. One strategy could be to deterministically derive an IV from the passphrase or to generate it randomly and store 
 the mapping on the client side. The IPNI specification doesn't enforce how an IV should be chosen and leaves that up to the client to decide. 
 
-Encrypted payload must have algorithm and nonce encoded in it: `algorithm || nonce || enc(payload)`, where `algorithm` is 1 byte long (TODO: define mapping table) and `nonce` is 12 bytes long.
+Encrypted payload must have nonce encoded in it: `nonce || enc(payload)`, where `nonce` is 12 bytes long.
 
 ### Data Formats
 

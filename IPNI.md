@@ -469,6 +469,11 @@ and uses the multihash portion of the CID only.
 * `cid` - _Required_. The default string representation of the Cid. Currently, Base32 is used for
   CIDv1 as the encoding for the multibase string and Base58 is used for CIDv0.
 
+##### Query Parameters
+
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
+    * `ipfs-dht`- The IPFS Kademlia DHT.
+
 ##### Response
 
 * `application/json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Find Response](#json-find-response) example.
@@ -487,6 +492,12 @@ Given a multihash as path parameter, returns a list of its content providers.
 ##### Path Parameters
 
 * `multihash` - _Required_. The Base58 string representation of multihash value.
+
+##### Query Parameters
+
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
+  * `ipfs-dht`- The IPFS Kademlia DHT.
+
 
 ##### Response
 
@@ -519,6 +530,12 @@ Base58 string representation. See [`FindRequest`][find-request-schema] schema.
   ]
 }
 ```
+
+##### Query Parameters
+
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
+    * `ipfs-dht`- The IPFS Kademlia DHT.
+
 
 ##### Response
 

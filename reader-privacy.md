@@ -141,10 +141,6 @@ Doing that will require significant resources as it involves crawling the entire
 
 Reader Privacy is a first step towards fully private content routing protocol. 
 
-In particular, we are 
-
-Someone wants to detect who is looking for a particular piece of content, i.e. surveilling content. For example, an IPNI endpoint that wants to know how frequently people are requesting some website it cares about.
-Someone wants to do mass surveillance on readily accessible data. For example, a group running an IPNI endpoint also runs web crawlers looking for IPFS links, or runs a public HTTP gateway and can log those requests, etc.
 
 Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
 

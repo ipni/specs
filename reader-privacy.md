@@ -94,21 +94,20 @@ lookup query (hence the name double hashing);
 Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
 `enc(peerID || contextID, MH)`, where `hash` is a hash over the value, and `||` is concatenation 
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
-to get hold of the original CID that isn't revealed during the communication round;
-* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate a hash
-over the decrypted `peerID` part of it. Using `hash(peerID)` for each `ProviderRecordKey` the client would do another lookup 
-round to get an encrypted `ProviderRecord` in response: `enc(ProviderRecord, peerID)`. `ProviderRecord` will contain provider's 
-*multiaddrs* with other possible provider-related information in the future.
- Each `ProviderRecord` will be encrypted with a key derived from their `peerID`. In order to make sense of that payload, a passive observer would need to 
+to get hold of the original multihash that isn't revealed during the communication round;
+* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate
+`hash(peerID)` for each. Using these hashes the client will do another lookup 
+round to get encrypted `ProviderRecord`s in response: `enc(ProviderRecord, peerID)`. `ProviderRecord` will contain the provider's 
+*multiaddrs* with some other possible provider-related information in the future. In order to make a sense of that payload, a passive observer would need to 
 get hold of the original `peerID` that isn't revealed during the communication round. It's important to note that
 `ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times;
 * Using a key derived from the `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
-provider directly to fetch the desired content. 
-* The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements.
-That will require another lookup by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
+provider directly to fetch the desired content; 
+* The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements. 
+That will require another lookup round by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
 
-By utilising such scheme only a party that knows original CID can decode the protocol,
-and that CID is never revealed. 
+By utilising such scheme only a party that knows the original CID can decode the protocol,
+which is never revealed. 
 
 ```mermaid
 sequenceDiagram

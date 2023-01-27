@@ -96,16 +96,16 @@ Each `ProviderRecordKey` will be encrypted with a key derived from the *original
 and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
 to get hold of the original CID that isn't revealed during the communication round;
 * Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate a hash
-over the decrypted `peerID` part of it. Using such hash for each `ProviderRecordKey` the client would do another lookup 
-to get an encrypted `ProviderRecord` in response. `ProviderRecord` will contain information about the provider, 
-consisting of its *peerID* and *multiaddrs*. Each `ProviderRecord` will be encrypted 
-with a key derived from `peerID`. In order to make sense of that payload, a passive observer would need to 
-get hold of the original `peerID` that isn't revealed during the communication round;
-* Using a key derived from `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
+over the decrypted `peerID` part of it. Using `hash(peerID)` for each `ProviderRecordKey` the client would do another lookup 
+round to get an encrypted `ProviderRecord` in response: `enc(ProviderRecord, peerID)`. `ProviderRecord` will contain provider's 
+*multiaddrs* with other possible provider-related information in the future.
+ Each `ProviderRecord` will be encrypted with a key derived from their `peerID`. In order to make sense of that payload, a passive observer would need to 
+get hold of the original `peerID` that isn't revealed during the communication round. It's important to note that
+`ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times;
+* Using a key derived from the `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
 provider directly to fetch the desired content. 
 * The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements.
 That will require another lookup by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
-*This step will not be required for IPFS as Bitswap protocol is assumed implicitly.*
 
 By utilising such scheme only a party that knows original CID can decode the protocol,
 and that CID is never revealed. 
@@ -140,6 +140,11 @@ by re-ingesting advertisements chain from each publisher in order to collect all
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
 Reader Privacy is a first step towards fully private content routing protocol. 
+
+In particular, we are 
+
+Someone wants to detect who is looking for a particular piece of content, i.e. surveilling content. For example, an IPNI endpoint that wants to know how frequently people are requesting some website it cares about.
+Someone wants to do mass surveillance on readily accessible data. For example, a group running an IPNI endpoint also runs web crawlers looking for IPFS links, or runs a public HTTP gateway and can log those requests, etc.
 
 Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
 

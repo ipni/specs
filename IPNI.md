@@ -459,6 +459,22 @@ to fetch the advertisement chain.
 
 An indexer node can be queried over HTTP for a multihash or a CID. This section provides a summary of the HTTP query APIs. A full OpenAPI specification of the APIs can be found [here](schemas/v1/openapi.yaml).
 
+
+#### Cascading Lookup
+
+The HTTP query API supports cascading queries for a given multihash or CID onto alternative routing systems in addition to searching IPNI records.
+A client may optionally specify a query parameter with key set to `cascade`, and value set to comma separated alternative routing systems, which are also searched for records.
+
+The specification imposes no constraints on the order by which the results are returned.
+Implementers are free to return results as they are found.
+
+The alternative routing systems currently supported is:
+ * `ipfs-dht`: equivalent to searching records on the IPFS network.
+
+A client may discover the list of alternative routing systems supported by a server via sending `OPTIONS` request.
+In response, the server may include `X-IPNI-Allow-Cascade` header key, with value as the comma separated list of alternative routing systems supported.
+The absence of this header key implies that the server does not offer cascading lookups.
+
 #### `GET /cid/{cid}`
 
 Given a CID as path parameter, returns a list of its content providers. The lookup ignores CID codec
@@ -471,8 +487,7 @@ and uses the multihash portion of the CID only.
 
 ##### Query Parameters
 
-* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
-    * `ipfs-dht`- The IPFS Kademlia DHT.
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. See [Cascading Lookup](#cascading-lookup)
 
 ##### Response
 
@@ -495,8 +510,7 @@ Given a multihash as path parameter, returns a list of its content providers.
 
 ##### Query Parameters
 
-* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
-  * `ipfs-dht`- The IPFS Kademlia DHT.
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. See [Cascading Lookup](#cascading-lookup)
 
 
 ##### Response
@@ -533,8 +547,7 @@ Base58 string representation. See [`FindRequest`][find-request-schema] schema.
 
 ##### Query Parameters
 
-* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. Supported values:
-    * `ipfs-dht`- The IPFS Kademlia DHT.
+* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. See [Cascading Lookup](#cascading-lookup)
 
 
 ##### Response
@@ -667,6 +680,6 @@ The following lists the libraries and implementations of IPNI protocol:
 
 Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 
-[find-response-schema]: schemas/v1/openapi.yaml#L108
-[provider-record-schema]: (schemas/v1/openapi.yaml#L124)
-[find-request-schema]: schemas/v1/openapi.yaml#L144
+[find-response-schema]: schemas/v1/openapi.yaml#L120
+[provider-record-schema]: (schemas/v1/openapi.yaml#L136)
+[find-request-schema]: schemas/v1/openapi.yaml#L156

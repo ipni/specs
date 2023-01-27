@@ -1,7 +1,6 @@
 openapi: 3.0.3
 info:
   title: IPNI HTTP API
-  summary: IPNI HTTP query API
   description: The Interplanetary Network Indexer (IPNI) HTTP query API.
   version: 0.0.1
 paths:
@@ -13,6 +12,7 @@ paths:
           in: path
           description: The string representation of the CID.
           required: true
+        - $ref: '#/components/parameters/Cascade'
       responses:
         '200':
           description: At least one provider was found successfully.
@@ -39,6 +39,12 @@ paths:
           description: Failure occurred while processing the request.
           content:
             text/plain: { }
+  /cid:
+    options:
+      description: Returns permitted communication options for lookup by CID.
+      responses:
+        204:
+          $ref: '#/components/responses/FindOptions'
   /multihash/{multihash}:
     get:
       description: Finds provider records for a given multihash
@@ -47,6 +53,7 @@ paths:
           in: path
           description: The base58 string representation of the multihash.
           required: true
+        - $ref: '#/components/parameters/Cascade'
       responses:
         '200':
           description: At least one provider was found successfully.
@@ -74,6 +81,11 @@ paths:
           content:
             text/plain: { }
   /multihash:
+    options:
+      description: Returns permitted communication options for lookup by multihash.
+      responses:
+        204:
+          $ref: '#/components/responses/FindOptions'
     post:
       description: Batch finds provider records for a given set of multihashes
       requestBody:
@@ -236,6 +248,45 @@ components:
             }
           ]
         }
+  parameters:
+    Cascade:
+      name: cascade
+      in: query
+      description: |
+        The comma separated list of routing systems to search for providers in addition to IPNI.
+        The list of supported routing systems can be discovered by reading `X-IPNI-Allow-Cascade`
+        response header to `OPTIONS` request.
+      schema:
+        type: string
+      required: false
+  responses:
+    FindOptions:
+      description: Request accepted.
+      headers:
+        Access-Control-Allow-Origin:
+          description: |
+            The origin permitted to the request.
+            See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin.
+          schema:
+            type: string
+        Access-Control-Allow-Headers:
+          description: |
+            The comma separated list of HTTP headers inspected by the server.
+            See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+          schema:
+            type: string
+        Access-Control-Allow-Methods:
+          description: |
+            The comma separated list of permitted HTTP methods.
+            See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Method
+          schema:
+            type: string
+        X-IPNI-Allow-Cascade:
+          description: |
+            The comma separated list of supported routing systems onto which the lookup can be cascaded.
+            The absence of this header implies that the server does not offer cascading lookups.
+          schema:
+            type: string
 externalDocs:
   description: IPNI Specification
   url: https://github.com/ipni/specs/blob/main/IPNI.md

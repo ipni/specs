@@ -1,0 +1,241 @@
+openapi: 3.0.3
+info:
+  title: IPNI HTTP API
+  summary: IPNI HTTP query API
+  description: The Interplanetary Network Indexer (IPNI) HTTP query API.
+  version: 0.0.1
+paths:
+  /cid/{cid}:
+    get:
+      description: Finds provider records for a given CID by extracting its multihash.
+      parameters:
+        - name: cid
+          in: path
+          description: The string representation of the CID.
+          required: true
+      responses:
+        '200':
+          description: At least one provider was found successfully.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/FindResponse'
+              examples:
+                providerRecords:
+                  $ref: '#/components/examples/JsonFindResponse'
+            'application/x-ndjson':
+              schema:
+                $ref: '#/components/schemas/ProviderRecord'
+              examples:
+                providerRecords:
+                  $ref: '#/components/examples/NDJsonProviderRecords'
+        '400':
+          description: The given request is not valid.
+          content:
+            text/plain: { }
+        '404':
+          description: No results were found for the given CID.
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+  /multihash/{multihash}:
+    get:
+      description: Finds provider records for a given multihash
+      parameters:
+        - name: multihash
+          in: path
+          description: The base58 string representation of the multihash.
+          required: true
+      responses:
+        '200':
+          description: At least one provider was found successfully.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/FindResponse'
+              examples:
+                providerRecords:
+                  $ref: '#/components/examples/JsonFindResponse'
+            'application/x-ndjson':
+              schema:
+                $ref: '#/components/schemas/ProviderRecord'
+              examples:
+                providerRecords:
+                  $ref: '#/components/examples/NDJsonProviderRecords'
+        '400':
+          description: The given request is not valid.
+          content:
+            text/plain: { }
+        '404':
+          description: No results were found for the given multihash.
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+  /multihash:
+    post:
+      description: Batch finds provider records for a given set of multihashes
+      requestBody:
+        description: Callback payload
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/FindResponse'
+            examples:
+              providerRecords:
+                $ref: '#/components/examples/JsonFindResponseMultiple'
+      responses:
+        '200':
+          description: At least one provider was found successfully.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/FindResponse'
+        '400':
+          description: The given request is not valid.
+          content:
+            text/plain: { }
+        '404':
+          description: No results were found for any of the given multihashs.
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+components:
+  schemas:
+    FindResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/MultihashResults'
+    MultihashResults:
+      type: array
+      items:
+        type: object
+        properties:
+          Multihash:
+            type: string
+            description: base64 string representation of the queried multihash
+          ProviderResults:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProviderRecord'
+    ProviderRecord:
+      type: object
+      properties:
+        ContextID:
+          type: string
+          description: base64 encoded context ID.
+        Metadata:
+          type: string
+          description: base64 encoded metadata.
+        Provider:
+          type: object
+          properties:
+            ID:
+              type: string
+              description: encoded libp2p peer ID of the provider.
+            Addrs:
+              type: array
+              items:
+                type: string
+                description: string representation of the provider multiaddr.
+    FindRequest:
+      type: object
+      properties:
+        Multihashes:
+          type: array
+          description: the list of multihashes for which to find providers.
+          items:
+            type: string
+            description: base64 string representation of the multihash.
+  examples:
+    NDJsonProviderRecords:
+      summary: Streaming provider records response
+      value: |
+        {"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWHVXoJnv2ifmr9K6LWwJPXxkfvzZRHzjiTZMvybeTnwPy","Addrs":["/ip4/145.40.89.101/tcp/4001","/ip4/145.40.89.101/tcp/4002/ws","/ip4/145.40.89.101/udp/4001/quic","/ip6/2604:1380:45f1:d800::1/tcp/4001","/ip6/2604:1380:45f1:d800::1/tcp/4002/ws","/ip6/2604:1380:45f1:d800::1/udp/4001/quic"]}}
+        
+        {"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWDpp7U7W9Q8feMZPPEpPP5FKXTUakLgnVLbavfjb9mzrT","Addrs":["/ip4/147.75.80.75/tcp/4001","/ip4/147.75.80.75/tcp/4002/ws","/ip4/147.75.80.75/udp/4001/quic","/ip6/2604:1380:4601:f600::5/tcp/4001","/ip6/2604:1380:4601:f600::5/tcp/4002/ws","/ip6/2604:1380:4601:f600::5/udp/4001/quic"]}}
+        
+        {"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWCrBiagtZMzpZePCr1tfBbrZTh4BRQf7JurRqNMRi8YHF","Addrs":["/ip4/147.75.87.65/tcp/4001","/ip4/147.75.87.65/tcp/4002/ws","/ip4/147.75.87.65/udp/4001/quic","/ip6/2604:1380:4601:f600::1/tcp/4001","/ip6/2604:1380:4601:f600::1/tcp/4002/ws","/ip6/2604:1380:4601:f600::1/udp/4001/quic"]}}
+    JsonFindResponse:
+      summary: Find response with single multihash
+      value: |
+        {
+          "MultihashResults": [
+            {
+              "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
+              "ProviderResults": [
+                {
+                  "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
+                  "Metadata": "gBI=",
+                  "Provider": {
+                    "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
+                    "Addrs": [
+                      "/dns4/elastic.dag.house/tcp/443/wss"
+                    ]
+                  }
+                },
+                {
+                  "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
+                  "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
+                  "Provider": {
+                    "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
+                    "Addrs": [
+                      "/ip4/149.5.22.10/tcp/24002"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+    JsonFindResponseMultiple:
+      summary: Find response with multiple multihashes
+      value: |
+        {
+          "MultihashResults": [
+            {
+              "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
+              "ProviderResults": [
+                {
+                  "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
+                  "Metadata": "gBI=",
+                  "Provider": {
+                    "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
+                    "Addrs": [
+                      "/dns4/elastic.dag.house/tcp/443/wss"
+                    ]
+                  }
+                },
+                {
+                  "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
+                  "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
+                  "Provider": {
+                    "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
+                    "Addrs": [
+                      "/ip4/149.5.22.10/tcp/24002"
+                    ]
+                  }
+                }
+              ],
+              "Multihash": "oOQCIPNDQHkqUhHx5pVtF6ijer8cljI1oJ0oh710UqcamtuP",
+              "ProviderResults": [
+                {
+                  "ContextID": "AXESIHKH83SGwMdaaJZfXNu6yXZtNHLUHT+llGMryKHXG8Wb",
+                  "Metadata": "gBKQEqNoUGllY2VDSUTYKlgoAAGB4gOSICAYVAKmPqL1mpkiiDhd9iBaXoU/3rXorXxzjiyESP4hB2xWZXJpZmllZERlYWz0bUZhc3RSZXRyaWV2YWz1",
+                  "Provider": {
+                    "ID": "12D3KooWE8yt84RVwW3sFcd6WMjbUdWrZer2YtT4dmtj3dHdahSZ",
+                    "Addrs": [
+                      "/ip4/85.11.148.122/tcp/24001"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+externalDocs:
+  description: IPNI Specification
+  url: https://github.com/ipni/specs/blob/main/IPNI.md

@@ -32,30 +32,36 @@ retrieval address and protocol.
 
 ## Table of Contents
 
-* [Introduction](#introduction)
-* [Background](#background)
-    - [Motivation](#motivation)
-* [Terminology](#terminology)
-* [Specification](#specification)
-    - [Overview](#overview)
-    - [Ingestion](#ingestion)
-    - [Advertisements](#advertisements)
-        - [Entries](#entries)
-        - [Metadata](#metadata)
-        - [ExtendedProvider](#extendedprovider)
-    - [Advertisement Transfer](#advertisement-transfer)
-        - [Libp2p](#libp2p)
-        - [HTTP](#http)
-    - [Announcements](#announcements)
-        - [GossupSub](#gossipsub)
-        - [HTTP](#http-1)
-    - [Querying Records](#querying-records)
-        - [Find Providers by CID](#get-cidcid)
-        - [Find Providers by Multihash](#get-multihashmultihash)
-        - [Batch Find Providers](#post-multihash)
-* [Implementations](#implementations)
-* [Related Resources](#related-resources)
-* [Copyright](#copyright)
+- [Introduction](#introduction)
+- [Background](#background)
+    * [Motivation](#motivation)
+- [Terminology](#terminology)
+- [Specification](#specification)
+    * [Overview](#overview)
+    * [Ingestion](#ingestion)
+    * [Advertisements](#advertisements)
+        + [Entries](#entries)
+            - [`EntryChunk` Chain](#entrychunk-chain)
+            - [HAMT](#hamt)
+        + [Metadata](#metadata)
+        + [ExtendedProvider](#extendedprovider)
+    * [Advertisement Transfer](#advertisement-transfer)
+        + [Libp2p](#libp2p)
+        + [HTTP](#http)
+    * [Announcements](#announcements)
+        + [Gossipsub](#gossipsub)
+        + [HTTP](#http-1)
+    * [Querying Records](#querying-records)
+        + [`GET /cid/{cid}`](#get-cidcid)
+        + [`GET /multihash/{multihash}`](#get-multihashmultihash)
+        + [`POST /multihash`](#post-multihash)
+    * [Example Responses](#example-responses)
+        + [JSON Find Response](#json-find-response)
+        + [JSON Batch Find Response](#json-batch-find-response)
+        + [NDJSON Streaming Records](#ndjson-streaming-records)
+- [Implementations](#implementations)
+- [Related Resources](#related-resources)
+- [Copyright](#copyright)
 
 ## Introduction
 
@@ -451,7 +457,7 @@ to fetch the advertisement chain.
 
 ### Querying Records
 
-An indexer node can be queried over HTTP for a multihash or a CID.
+An indexer node can be queried over HTTP for a multihash or a CID. This section provides a summary of the HTTP query APIs. A full OpenAPI specification of the APIs can be found [here](schemas/v1/openapi.yaml).
 
 #### `GET /cid/{cid}`
 
@@ -465,47 +471,14 @@ and uses the multihash portion of the CID only.
 
 ##### Response
 
-JSON encoded list of provider records.
+* `application/json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Find Response](#json-find-response) example.
+* `application/x-ndjson` - one-per-line NDJSON encoded [`ProviderRecord`s][provider-record-schema]. See [NDJSON Streaming Records](#ndjson-streaming-records) example.
 
 ###### Status Code
 
 * `200` - OK.
 * `400` - Invalid CID.
 * `404` - No provider records found for given CID.
-
-###### Example
-
-```json
-{
-  "MultihashResults": [
-    {
-      "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
-      "ProviderResults": [
-        {
-          "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
-          "Metadata": "gBI=",
-          "Provider": {
-            "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
-            "Addrs": [
-              "/dns4/elastic.dag.house/tcp/443/wss"
-            ]
-          }
-        },
-        {
-          "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
-          "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
-          "Provider": {
-            "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
-            "Addrs": [
-              "/ip4/149.5.22.10/tcp/24002"
-            ]
-          }
-        }
-      ]
-    }
-  ]
-}
-```
 
 #### `GET /multihash/{multihash}`
 
@@ -517,47 +490,15 @@ Given a multihash as path parameter, returns a list of its content providers.
 
 ##### Response
 
-JSON encoded list of provider records.
+* `application/json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Find Response](#json-find-response) example.
+* `application/x-ndjson` - one-per-line NDJSON encoded [`ProviderRecord`s][provider-record-schema]. See [NDJSON Streaming Records](#ndjson-streaming-records) example.
+
 
 ###### Status Code
 
 * `200` - OK
 * `400` - Invalid multihash.
 * `404` - No provider records found for given multihash.
-
-###### Example
-
-```json
-{
-  "MultihashResults": [
-    {
-      "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
-      "ProviderResults": [
-        {
-          "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
-          "Metadata": "gBI=",
-          "Provider": {
-            "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
-            "Addrs": [
-              "/dns4/elastic.dag.house/tcp/443/wss"
-            ]
-          }
-        },
-        {
-          "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
-          "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
-          "Provider": {
-            "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
-            "Addrs": [
-              "/ip4/149.5.22.10/tcp/24002"
-            ]
-          }
-        }
-      ]
-    }
-  ]
-}
-```
 
 #### `POST /multihash`
 
@@ -566,7 +507,7 @@ Given a list of multihashes as request body, batch finds the list of their conte
 ##### Request
 
 _Required_. JSON encoded list of multihashes to look up, where each multihash is encoded as its
-Base58 string representation.
+Base58 string representation. See [`FindRequest`][find-request-schema] schema.
 
 ###### Example
 
@@ -581,7 +522,7 @@ Base58 string representation.
 
 ##### Response
 
-JSON encoded list of provider records.
+* `application-json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Batch Find Response](#json-batch-find-response) example.
 
 ###### Status Code
 
@@ -589,7 +530,47 @@ JSON encoded list of provider records.
 * `400` - Invalid multihash.
 * `404` - No provider records found for given multihash.
 
-###### Example
+### Example Responses
+
+#### JSON Find Response
+
+The snippet blow shows a formatted JSON response to a find query for a single multihash that resulted in two provider records being found:
+
+```json
+{
+  "MultihashResults": [
+    {
+      "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
+      "ProviderResults": [
+        {
+          "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
+          "Metadata": "gBI=",
+          "Provider": {
+            "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
+            "Addrs": [
+              "/dns4/elastic.dag.house/tcp/443/wss"
+            ]
+          }
+        },
+        {
+          "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
+          "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
+          "Provider": {
+            "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
+            "Addrs": [
+              "/ip4/149.5.22.10/tcp/24002"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### JSON Batch Find Response
+
+The snippet blow shows a formatted JSON response to a batch find query for two multihashes that resulted in two provider records being found for one multihash and one record for the other:
 
 ```json
 {
@@ -636,6 +617,18 @@ JSON encoded list of provider records.
 }
 ```
 
+#### NDJSON Streaming Records
+
+The snippet below shows one-per-line provider records found in response to a lookup:
+
+```json lines
+{"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWHVXoJnv2ifmr9K6LWwJPXxkfvzZRHzjiTZMvybeTnwPy","Addrs":["/ip4/145.40.89.101/tcp/4001","/ip4/145.40.89.101/tcp/4002/ws","/ip4/145.40.89.101/udp/4001/quic","/ip6/2604:1380:45f1:d800::1/tcp/4001","/ip6/2604:1380:45f1:d800::1/tcp/4002/ws","/ip6/2604:1380:45f1:d800::1/udp/4001/quic"]}}
+
+{"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWDpp7U7W9Q8feMZPPEpPP5FKXTUakLgnVLbavfjb9mzrT","Addrs":["/ip4/147.75.80.75/tcp/4001","/ip4/147.75.80.75/tcp/4002/ws","/ip4/147.75.80.75/udp/4001/quic","/ip6/2604:1380:4601:f600::5/tcp/4001","/ip6/2604:1380:4601:f600::5/tcp/4002/ws","/ip6/2604:1380:4601:f600::5/udp/4001/quic"]}}
+
+{"ContextID":"aXBmcy1kaHQtY2FzY2FkZQ==","Metadata":"gBI=","Provider":{"ID":"12D3KooWCrBiagtZMzpZePCr1tfBbrZTh4BRQf7JurRqNMRi8YHF","Addrs":["/ip4/147.75.87.65/tcp/4001","/ip4/147.75.87.65/tcp/4002/ws","/ip4/147.75.87.65/udp/4001/quic","/ip6/2604:1380:4601:f600::1/tcp/4001","/ip6/2604:1380:4601:f600::1/tcp/4002/ws","/ip6/2604:1380:4601:f600::1/udp/4001/quic"]}}
+```
+
 ## Implementations
 
 The following lists the libraries and implementations of IPNI protocol:
@@ -656,3 +649,7 @@ The following lists the libraries and implementations of IPNI protocol:
 ## Copyright
 
 Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+
+[find-response-schema]: schemas/v1/openapi.yaml#L108
+[provider-record-schema]: (schemas/v1/openapi.yaml#L124)
+[find-request-schema]: schemas/v1/openapi.yaml#L144

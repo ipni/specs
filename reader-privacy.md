@@ -40,6 +40,7 @@ provider lookup.
 - [Introduction](#introduction)
 - [Background](#background)
 - [Specification](#specification)
+    - [Extended Providers](#extended-providers)
     - [Security](#security)
         - [Hashing and Encryption Function Upgrades](#hashing-and-encryption-function-upgrades)
     - [Trade Offs](#trade-offs)
@@ -68,8 +69,9 @@ fully private IPNI protocol that will eliminate indexers as centralised observer
 
 ### Non Goals
 
-* Writer, i.e. content provider or publisher, Privacy, which will be done in a separate specification
-* Retrieval Privacy, which is out of scope for the content routing subsystem.
+* Writer, i.e. content provider or publisher, Privacy, which will be done in a separate specification;
+* Retrieval Privacy, which is out of scope for the content routing subsystem;
+* Rogue IPNI behaviour (explained in the [Security](#security) section).
 ​
 ## Background
 ​
@@ -93,7 +95,8 @@ lookup query (hence the name double hashing);
 `ProviderRecordKey` will consist of the `peerID` concatenated with `contextID`. 
 Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
 `enc(peerID || contextID, MH)`, where `hash` is a hash over the value, and `||` is concatenation 
-and `enc` is encryption over the value. In order to make sense of that payload, a passive observer would need 
+and `enc` is encryption over the value. *This notation is going to be used for the rest of the specification*.
+In order to make sense of that payload, a passive observer would need 
 to get hold of the original multihash that isn't revealed during the communication round;
 * Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate
 `hash(peerID)` for each. Using these hashes the client will do another lookup 
@@ -101,7 +104,7 @@ round to get encrypted `ProviderRecord`s in response: `enc(ProviderRecord, peerI
 *multiaddrs* with some other possible provider-related information in the future. In order to make a sense of that payload, a passive observer would need to 
 get hold of the original `peerID` that isn't revealed during the communication round. It's important to note that
 `ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times;
-* Using a key derived from the `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
+* Using the key derived from the `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
 provider directly to fetch the desired content; 
 * The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements. 
 That will require another lookup round by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
@@ -129,17 +132,33 @@ sequenceDiagram
     client->>provider: reaches out to the provider for the desired content
 ```
 
+### Extended Providers
+
+[Extended Providers](https://github.com/ipni/specs/blob/main/IPNI.md#extendedprovider) allow a publisher to add an extra information to all their past and future Advertisements 
+or to a single Advertisement with a specific `ContextID`. That can be done by sending just a single Advertisement without having to re-publish the whole Advertisement chain. 
+If present Extended Providers are applied to the IPNI output on the server which results into more `ProviderRecord`s being returned to the user. Same will not be possible 
+for privacy preserving lookups as the required fields such as `PeerID` and `ContextID` are opaque to the server. 
+
+While the mechanics stays the same, applying Extended Providers to the decrypted values will have to be done at the client side. If exist, Extended Providers should be included 
+as a field in the `ProviderRecord` which would make them cacheable too. 
 
 ### Security
 ​
 Security model of the Reader Privacy proposal boils down to inability of an attacker to *algorithmically* derive the original multihash value from 
 `hash(multihash)` that is used for IPNI lookups. IPNI advertisments are not encrypted, but authenticated and contain plain multihash values in them.
 Before Writer Privacy is implemented an attacker could build a map of `hash(multihash) -> multihash` 
-by re-ingesting advertisements chain from each publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
+by re-ingesting Advertisements chain from each publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
-Reader Privacy is a first step towards fully private content routing protocol. 
+Even with both Reader and Writer Privacies in place a rogue IPNI actor might abuse the double-hashing security model. For example:
+* Someone wants to detect who is looking for a particular piece of content, i.e. surveilling content. For example, an IPNI endpoint that wants to know how 
+frequently people are requesting some website it cares about;
+* Someone wants to do mass surveillance on readily accessible data. For example, a group running an IPNI endpoint also runs web crawlers looking for IPFS links, 
+or runs a public HTTP gateway and can log those requests.
 
+Rogue IPNI behaviour will be addressed by IPNI reputation system that is out of scope for this specification. 
+
+Reader Privacy is a first step towards fully private content routing protocol. 
 
 Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
 

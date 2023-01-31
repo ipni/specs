@@ -98,11 +98,12 @@ Each `ProviderRecordKey` will be encrypted with a key derived from the *original
 and `enc` is encryption over the value. *This notation is going to be used for the rest of the specification*.
 In order to make sense of that payload, a passive observer would need 
 to get hold of the original multihash that isn't revealed during the communication round;
-* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then use
+* Using the original multihash, the client will decrypt `ProviderRecordKey`s and use
 the `peerID` to fetch a `ProviderRecord`. `ProviderRecord` will contain the provider's 
 *multiaddrs* with some other possible provider-related information in the future.
-`ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times;
-* Using the `ProviderRecord` the client will reach out to the provider directly and fetch the desired content; 
+`ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times. Peer addresses can 
+also be discovered through alternative sources such as libp2p peerstore ;
+* Using addresses from the `ProviderRecord` the client will reach out to the provider directly and fetch the desired content; 
 * The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements. 
 That will require another lookup round by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
 

@@ -98,14 +98,11 @@ Each `ProviderRecordKey` will be encrypted with a key derived from the *original
 and `enc` is encryption over the value. *This notation is going to be used for the rest of the specification*.
 In order to make sense of that payload, a passive observer would need 
 to get hold of the original multihash that isn't revealed during the communication round;
-* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then calculate
-`hash(peerID)` for each. Using these hashes the client will do another lookup 
-round to get encrypted `ProviderRecord`s in response: `enc(ProviderRecord, peerID)`. `ProviderRecord` will contain the provider's 
-*multiaddrs* with some other possible provider-related information in the future. In order to make a sense of that payload, a passive observer would need to 
-get hold of the original `peerID` that isn't revealed during the communication round. It's important to note that
+* Using the original multihash, the client will decrypt `ProviderRecordKey`s and then use
+the `peerID` to fetch a `ProviderRecord`. `ProviderRecord` will contain the provider's 
+*multiaddrs* with some other possible provider-related information in the future.
 `ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times;
-* Using the key derived from the `peerID`, the client will decrypt `ProviderRecord`s and then reach out to the 
-provider directly to fetch the desired content; 
+* Using the `ProviderRecord` the client will reach out to the provider directly and fetch the desired content; 
 * The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements. 
 That will require another lookup round by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
 
@@ -122,9 +119,8 @@ sequenceDiagram
     indexer->>client: sends a list of [ProviderRecordKey], each encrypted with a key derived from MH
     loop ProviderRecordKeys
         client->>client: decrypts ProviderRecordKey and extracts peerID from it
-        client->>indexer: sends ProviderRecord lookup request for hash(peerID)
-        indexer->>client: sends a ProviderRecord encrypted with a key derived from peerID
-        client->>client: decrypts the ProviderRecord
+        client->>indexer: sends ProviderRecord lookup request for peerID
+        indexer->>client: sends a ProviderRecord
         client->>indexer: [Optional] sends Metadata lookup request for hash(ProviderRecordKey) 
         indexer->>client: [Optional] sends Metadata encrypted with a key derived from ProviderRecordKey
         client->>client: [Optional] decrypts the Metadata

@@ -124,7 +124,9 @@ Naam repurposes the same advertisement structure by specifically crafting entrie
 such that the indexer node find API can also be repurposed to lookup IPNS records. Naam forms a
 single `EntryChunk` IPLD node, that contains a single multihash calculated as:
 
-* the SHA-256 of IPNS Record Key, i.e. `/ipns/<ipns-key>`.
+* The SHA-256 multihash of IPNS Record Key, i.e. `/ipns/<ipns-key>`.
+   * The multihash value is encoded according to the IPNI advertisement encoding. See [IPNI Specification](IPNI.md). 
+   * There are no restrictions on the concrete IPNS key format as long as it complies with the [IPNS routing record specification](https://github.com/ipfs/specs/blob/main/ipns/IPNS.md#routing-record).
 
 This approach allows the resolvers to deterministically calculate the multihash used for lookup when
 interacting with the indexer node find APIs.

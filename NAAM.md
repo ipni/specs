@@ -108,7 +108,7 @@ embed IPNS records and are signed by their identity. The produced advertisements
   single entry: the multihash of IPNS record key with `nil` as link to `Next`.
 * **`ContextID`** - fixed to UTF-8 bytes encoding of the value `/ipni/naam`.
 * **`Metadata`** - the bytes representation of Naam metadata, consisting of:
-    * the varint representation of IPNS multicodec code, i.e. `0xe5`, as bytes,
+    * the varint representation of `ipns-record` multicodec code, i.e. `0x0300`, as bytes,
     * followed by the marshalled IPNS record.
 * **`IsRm`** - the boolean value specifying weather an IPNS entry is being added/updated,
   i.e. `false`, or removed, i.e. `true`.
@@ -156,20 +156,13 @@ the remaining bytes.
 Naam utilises this extensibility to directly encode IPNS records as metadata. The Naam advertisement
 metadata consists of:
 
-* `ipns` multicodec code `0xe5` as protocol ID,
+* `ipns-record` multicodec code `0x0300` as protocol ID,
 * followed by marshalled IPNS Record.
 
 The use of metadata to capture IPNS records enables Naam to also utilise the built-in IPNI mechanism
 for updating metadata to update IPNS records. Because, context ID nor the multihash in Naam
 advertisements ever change for the same IPNS key. For more information,
 see [Updating IPNS Records](#updating-ipns-records).
-
-Note that the IPNS multicodec code `0xe5` is tagged as "namespace" in the CSV table, which could
-signify an IPNS path, not record. There is currently no multicodec code for IPNS records themselves.
-Alternatively, a new multicodec code can be introduced to the
-[multicodec CSV file](https://github.com/multiformats/multicodec/blob/master/table.csv) to avoid
-potential confusion between the two. The new code can then be used as the Protocol ID of Naam
-Metadata.
 
 ### Updating IPNS Records
 

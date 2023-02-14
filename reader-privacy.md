@@ -63,7 +63,7 @@ which client during the routing process, as the potential adversary easily learn
 A curious actor could request the same `CID` and download the associated file to monitor the user’s behavior. 
 This is obviously undesirable and has been for some time now a strong request from the community.
 
-The changes described in this specification introduce a IPNI Readres Privacy upgrade. It will prevent 
+The changes described in this specification introduce a IPNI Readers Privacy upgrade. It will prevent 
 passive observers from tracking user's actions as described above. It will also be a first step towards
 fully private IPNI protocol that will eliminate indexers as centralised observers.  
 

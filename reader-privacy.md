@@ -82,51 +82,81 @@ on the diagram below:
 ​
 ![Index building flow](resources/readers-privacy-1.png)
 
+## Magic Values
+
+All salts below are 64-bytes long, and represent a string padded with `\x00`.
+
+- `SALT_DOUBLEHASH = bytes("CR_DOUBLEHASH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")`
+- `SALT_ENCRYPTIONKEY = bytes("CR_ENCRYPTIONKEY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")`
+- `SALT_NONCE = bytes("CR_NONCE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")`
+
+
+## Definitions
+
+- **Advertisement** is [IPNI Advertisement](https://github.com/ipni/storetheindex/blob/main/api/v0/ingest/schema/schema.ipldsch#L40).
+- **Storage Provider** is a party who stores the data.
+- **Publisher** is a party who publishes CIDs into IPNI on behalf of a Storage Provider.
+- **Client** is a party who wants to find the content by its CID using IPNI.
+- **Passive Observer** a rogue party that tries to understand what content is being looked up by observing Client to IPNI traffic.
+- **`enc`** is [AESGCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode) encryption. 
+- **`hash`** is [SHA256](https://en.wikipedia.org/wiki/SHA-2) hashing.
+- **`||`** is concatenation of two values.
+- **`deriveKey`** is a process for deriving 32-byte encryption key from a passphrase taht must be done as `hash(SALT_ENCRYPTIONKEY || passphrase)`.
+- **`Nonce`** is a 12-byte Nonce used as Initialization Vector (IV) for the AES-GCM encryption. IPNI expects an explicit instruction to delete a record (comparing to the DHT where records expire).
+Hence the IPNI server needs to be able to compare encrypted values without having to decrypt them as that would require a key that it is unaware of.
+That means that the nonce has to be deterministically chosen so that `enc(IV, passphrase, payload)` produces the same output for the same 
+`passpharase` + `payload` pair. Nonce must be calculated as `sha256(SALT_NONCE || passphrase || len(payload) || payload)[:12]`, where `len(payload)` is 
+an 8 byte length of the `payload` encoded in Little Endian format. Choice of nonce is not enforced by the IPNI specification. The described approach will 
+be used while IPNI encrypts Advertisements on behaf of Publishers. However once Writer Privacy is implemented, the choice of nonce will be left up to the Publisher. 
+- **`CID`** is the [Content IDentifier](https://github.com/multiformats/cid).
+- **`MH`** is the [Multihash](https://github.com/multiformats/multihash) contained in a `CID`. It corresponds to the 
+digest of a hash function over some content. `MH` is represented as a 32-byte array.
+- **`HASH2`** is a second hash over the multihash. Second Hashes must be of `Multihash` format with `DBL_SHA_256` codec. 
+The digest must be calculated as `hash(SALT_DOUBLEHASH || MH)`.
+- **`ProviderRecord`** is a data structure that contains such information about Storage Provider as ther PeerID and Addresses.
+- **`ProviderRecordKey`** is a concatentation of `peerID || contextID`. There is no need for extra length / separators as they are
+already encoded as a part of the `Multihash` format. 
+- **`EncProviderRecordKey`** is `Nonce || enc(deriveKey(multihash), Nonce, ProviderRecordKey)`.
+- **`HashProviderRecordKey`**  is a hash over `ProviderRecordKey` that must be calculated as `hash(SALT_DOUBLEHASH || ProviderRecordKey)`.
+- **`Metadata`** is IPNI metadata that is supplied in Advertisements.
+- **`EncMetadata`** is `Nonce || enc(deriveKey(ProviderRecordKey), Nonce, Metadata)`.
+
 ## Specification
 ​
-This specification improves the reader privacy by proposing changes to the Step 3, depicted above, where the client 
+This specification improves Reader Privacy by proposing changes to the Step 3, depicted above, where the Client 
 supplies the content CID directly in order to lookup its corresponding providers.
 
-In order to protect the reader's privacy the proposal changes the way CID lookup works to the following:
-
-* A client who wants to do a lookup will calculate a hash over the CID's multihash (`hash(MH)`) and use it for the
-lookup query (hence the name double hashing);
-* In response to the hashed find request, the indexer will return a set of encrypted `ProviderRecordKey`s. 
-`ProviderRecordKey` will consist of the `peerID` concatenated with `contextID`. 
-Each `ProviderRecordKey` will be encrypted with a key derived from the *original* multihash value: 
-`enc(peerID || contextID, MH)`, where `hash` is a hash over the value, and `||` is concatenation 
-and `enc` is encryption over the value. *This notation is going to be used for the rest of the specification*.
-In order to make sense of that payload, a passive observer would need 
-to get hold of the original multihash that isn't revealed during the communication round;
-* Using the original multihash, the client will decrypt `ProviderRecordKey`s and use
-the `peerID` to fetch a `ProviderRecord`. `ProviderRecord` will contain the provider's 
-*multiaddrs* with some other possible provider-related information in the future.
-`ProviderRecord`s are cacheable and hence this rountrip can be avoided most of the times. Peer addresses can 
-also be discovered through alternative sources such as libp2p peerstore ;
+* A Client who wants to do a lookup will calculate `HASH2` and use it for the lookup query;
+* In response to that IPNI will return a list of `EncProviderRecordKey`s that contain
+encrypted `peerID` and `contextID` of the Storage Providers that have the content represented by the original `MH`.
+In order to make sense of that payload, a Passive Observer would need 
+to get hold of the original `MH` that isn't revealed during this communication round;
+* Using the original `MH`, the Client will decrypt `EncProviderRecordKey`s and use
+the `peerID` to fetch a `ProviderRecord`. `ProviderRecord`s can be cached on the Client side and hence this rountrip can be avoided most of the times. 
+Peer addresses can also be discovered through alternative sources such as libp2p peerstore ;
 * Using addresses from the `ProviderRecord` the client will reach out to the provider directly and fetch the desired content; 
-* The client might choose to fetch additional `Metadata` that is supplied to IPNI in Advertisements. 
-That will require another lookup round by `hash(ProviderRecordKey)` to get `enc(Metadata, ProviderRecordKey)` in response. 
+* The client might choose to fetch IPNI Metadata that will require another lookup round by `HashProviderRecordKey` to get `EncMetadata` in response. 
 
 By utilising such scheme only a party that knows the original CID can decode the protocol,
 which is never revealed. 
 
 ```mermaid
 sequenceDiagram
-    participant client
-    participant indexer
-    participant provider
-    client->>client: calculates hash(MH)
-    client->>indexer: sends a find request for hash(MH)
-    indexer->>client: sends a list of [ProviderRecordKey], each encrypted with a key derived from MH
-    loop ProviderRecordKeys
-        client->>client: decrypts ProviderRecordKey and extracts peerID from it
-        client->>indexer: sends ProviderRecord lookup request for peerID
-        indexer->>client: sends a ProviderRecord
-        client->>indexer: [Optional] sends Metadata lookup request for hash(ProviderRecordKey) 
-        indexer->>client: [Optional] sends Metadata encrypted with a key derived from ProviderRecordKey
-        client->>client: [Optional] decrypts the Metadata
+    participant Client
+    participant IPNI
+    participant StorageProvider
+    Client->>Client: calculates HASH2
+    Client->>IPNI: sends a find request for HASH2
+    IPNI->>Client: sends a list of [EncProviderRecordKey]
+    loop EncProviderRecordKeys
+        Client->>Client: decrypts EncProviderRecordKey and extracts peerID from it
+        Client->>IPNI: sends ProviderRecord lookup request for peerID
+        IPNI->>Client: sends a ProviderRecord
+        Client->>IPNI: [Optional] sends EncMetadata lookup request for hash(ProviderRecordKey) 
+        IPNI->>Client: [Optional] sends EncMetadata
+        Client->>Client: [Optional] decrypts the EncMetadata using ProviderRecordKey
     end
-    client->>provider: reaches out to the provider for the desired content
+    Client->>StorageProvider: reaches out to the Storage Provider for the desired content
 ```
 
 ### Extended Providers
@@ -136,15 +166,15 @@ or to a single Advertisement with a specific `ContextID`. That can be done by se
 If present Extended Providers are applied to the IPNI output on the server which results into more `ProviderRecord`s being returned to the user. Same will not be possible 
 for privacy preserving lookups as the required fields such as `PeerID` and `ContextID` are opaque to the server. 
 
-While the mechanics stays the same, applying Extended Providers to the decrypted values will have to be done at the client side. If exist, Extended Providers should be included 
+While the mechanics stays the same, applying Extended Providers to the decrypted values will have to be done at the Client side. If exist, Extended Providers should be included 
 as a field in the `ProviderRecord` which would make them cacheable too. 
 
 ### Security
 ​
-Security model of the Reader Privacy proposal boils down to inability of an attacker to *algorithmically* derive the original multihash value from 
-`hash(multihash)` that is used for IPNI lookups. IPNI advertisments are not encrypted, but authenticated and contain plain multihash values in them.
-Before Writer Privacy is implemented an attacker could build a map of `hash(multihash) -> multihash` 
-by re-ingesting Advertisements chain from each publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
+Security model of the Reader Privacy proposal boils down to inability of an attacker to *algorithmically* derive the original `MH` from 
+`HASH2` that is used for IPNI lookups. IPNI advertisments are not encrypted, but authenticated and contain plain multihash values in them.
+Before Writer Privacy is implemented an attacker could build a map of `HASH2 -> MH` 
+by re-ingesting Advertisements chain from each Publisher in order to collect all original multihashes which can then be used to decrypt provider records and so on. 
 Doing that will require significant resources as it involves crawling the entire network. However, it will eventually be eliminated by *Writer Privacy* upgrade.
 
 Even with both Reader and Writer Privacies in place a rogue IPNI actor might abuse the double-hashing security model. For example:
@@ -157,30 +187,28 @@ Rogue IPNI behaviour will be addressed by IPNI reputation system that is out of 
 
 Reader Privacy is a first step towards fully private content routing protocol. 
 
-Wider security implications are discussed in the IPFS Reader Privacy specification: TODO link here.
+Wider security implications are discussed in the [IPFS Reader Privacy specification](https://github.com/guillaumemichel/specs/blob/double-hashing-dht/IPIP/0373-double-hash-dht.md): TODO update the link once the PR is merged.
 
 #### Hashing and Encryption Function Upgrades
 
-All multihashes have a codec encoded in them. If a hashing or encryption funciton will have to rotate then different types of multihahses can coexist together
+All multihashes contain a codec. If a hashing or encryption funciton will have to rotate then different types of multihahses can coexist together
 and can be processed differently by IPNI implementations. It won't be possible to apply a fix retroactivelly to the data returned by previous lookup requests, 
 however IPNI implementations can start blocking all new ones that use a compromised scheme, allowing some transtition period. 
 
 Moving an IPNI implementation to a new hash / encryption function will require reingesting all data from a scratch. Before Writer Privacy is impemented the 
-index can be migrated over to new functions by reingesting existing advertisement chains. With Writer Privacy, Publishers will have to republish advertisments 
-using new functions (as the data in the advertisements themselves will have to be re-hashed / re-encrypted). Both old and new scheme can coexist together for some time. 
+index can be migrated over to new functions by reingesting existing Advertisement chains. With Writer Privacy, Publishers will have to republish Advertisments 
+using new functions (as the data in the Advertisements themselves will have to be re-hashed / re-encrypted). Both old and new scheme can coexist together for some time. 
 The old scheme should be retired either immediately or once the indexes have been rebuilt and the users have been migrated over. 
 
 An exact operational procedure will be different for differnet IPNI implementations.
 
 ### Trade Offs 
 
-* **Multiple lookups**. In the simplest scenario Reader Privacy protocol will require at least two roundtrips to find provider details for a given CID.
-It can be reduced down to one by caching `ProviderRecord`s at the client side, which would eliminate a need in a lookup
-per decrypted `ProviderRecordKey`. In the future there can be a separate service that distributes `PeerID` to `Multiaddresses` mappings in open.
-That dataset can be periodically downloaded by all clients and cached locally;
+* **Multiple lookups**. In the best case scenario Reader Privacy protocol will require one roundtrip to get a list of peers for a given CID. 
+Worst case scenario, when both `ProviderRecord`s and `Metadata`s need to be fetched from IPNI, will require 3+ lookups.
 
-* **Extra compute**. At minimum, clients will require to perform an extra hashing per CID and decryption per `ProviderRecordKey` that will add
-some overhead to each lookup. That overhead can be initially offloaded to the server but will have to be done by clients eventually (explained below);
+* **Extra compute**. At minimum, Clients will require to perform an extra hashing per CID and decryption per `ProviderRecordKey` that will add
+some overhead to each lookup. 
 
 * **Extra storage space**. Storing encrypted data will require more space due to paddings and nonce;
 
@@ -196,54 +224,26 @@ IPNI implementations will have to serve both plain and hashed lookups. That will
 
 ### Threat Modelling
 
-There are three actors involved into the IPNI workflow: provider, client and indexer. Providers update index by publishing advertisements.
-Indexer advertisements are signed by their publishers and can be authenticated. Advertisements are organised in a chain and are ingested strictly in order. 
-It's not possible to reorder advertisements wihtout forking the chain. Advertisements processing is idempotent - re-ingesting the same advertismeent twice 
-shouldn't affect the indexer's state. The IPNI specification is agnostic to transport protocols so particular protocol choice is up to the implementation. 
-Compromised publisher's identity is out of scope of this specification.
+There are three actors involved into the IPNI workflow: Publisher, Client and IPNI. Publishers update index by publishing Advertisements.
+Advertisements are signed by their Publishers and can be authenticated. Advertisements are organised in a chain and are ingested strictly in order. 
+It's not possible to reorder Advertisements wihtout having to fork the chain. Advertisements processing is idempotent - re-ingesting the same Advertismeent twice 
+doesn't affect IPNI state. The IPNI specification is agnostic to transport protocols so particular protocol choice is up to the implementation. 
+Compromised Publisher's identity is out of scope of this specification.
 
-Clients consume index by performing CID lookups. This specification introduces additional hashing and encryption that aim to prevent a passive observer
-from being able to infer what data is being looked up by spying at the client to indexer traffic. The exact communicaton protocol is out of scope for this specification 
-however it should be chosen carefully to prevent MITM attacks. Before Writer Privacy upgrade a passive observer could deobfuscate the content by building a `hash(Multihash)` to `Multihash` map.
+Clients consume index by performing CID lookups. This specification introduces additional hashing and encryption that aim to prevent a Passive Observer
+from being able to infer what data is being looked up by spying at the Client to IPNI traffic. The exact communicaton protocol is out of scope for this specification 
+however it should be chosen carefully to prevent MITM attacks. Before Writer Privacy upgrade a Passive Observer could deobfuscate the content by building a `HASH2` to `MH` map.
 That however will not be possible eventually as mentioned in the [Security](#security) section. 
 
-Provider records returned to client lookups do not contain any authentication data. It's possible for a malicious / buggy indexer to  
-present a wrong dataset to the client. Clients can tackle that problem by excluding such indexers from their pool. Returning wrong datasets will
-eventually affect the indexer's reputation score - these efforts are already in progress. Data integrity is inbuilt into IPFS - clients
-can verify that the data returned by a storage provider matches the CID. So even if indexer get compromised that will not compromise
+`EncProviderRecord`s do not contain any authentication data. It's possible for a malicious IPNI to  
+present a wrong dataset to the Client. Clients can tackle that by excluding such IPNIs from their pool. Returning wrong datasets will
+eventually affect the IPNI's reputation score - these efforts are already in progress. Data integrity is inbuilt into IPFS - Clients
+can verify that the data returned by a Storage Provider matches the CID. So even if an IPNI get compromised that will not compromise
 the data itself. 
-
-## Implementation
-
-This section goes through Reader Privacy protocol, hashing and cryptography choices as well as explains some less obvious details 
-for the implementations to consider.
-
-### Hashing
-
-SHA256 must be used as a hashing function. To avoid collisions between the hashes calculated from the same value but for different purposes (for example
-to derive an encryption key versus derive a lookup key) a constant string can be appended to the value before calculating a hash over it. For example
-`sha256("AESGCM" + multihash)` to derive an encryption key and `sha256("CR_DOUBLEHASH" + multihash)` to calculate a second hash over the multihash.
-
-All hashed data that is used for lookups must be of `Multihash` format with `SHA_256` codec. Double hashed data must use `DBL_SHA_256` codec.
-
-Multihashes must be prepended with `CR_DOUBLEHASH` before calculating a second hash. 
-
-### Encryption
-
-AES in GCM mode must be used for encryption. AES keys must be 32-bytes long and be derived from the passpharse by calculating a SHA256 over it. AES keys must be prepended with `AESGCM` before hashing them over.
-One particular detail - is a careful choice of 12-byte IV. IPNI expects an explicit instruction to delete a record (comparing to the DHT where records expire).
-Hence the IPNI server needs to be able to compare encrypted values without having to decrypt them as that would require a key that it is unaware of.
-That means that the IV needs to be deterministically chosen so that `enc(IV, passphrase, payload)` produces the same output for the same 
-passpharase + payload pair. One strategy could be to deterministically derive an IV from the passphrase or to generate it randomly and store 
-the mapping on the client side. The IPNI specification doesn't enforce how an IV should be chosen and leaves that up to the client to decide. 
-
-Encrypted payload must have nonce encoded in it: `nonce || enc(payload)`, where `nonce` is 12 bytes long.
 
 ### Data Formats
 
-* All binary data must be b58 encoded when transferred over the wire. 
-* `ProviderRecordKey`s must be created by concatenating binary `PeerID` with binary `ContextID`. There is no need for extra length / separators as they are
-already encoded as a part of the `Multihash` format.
+All binary data must be b58 encoded when transferred over the wire. 
 
 ## Related Resources
 ​

@@ -451,7 +451,7 @@ that only selected providers are given access to this endpoint due to potential 
 concerns.
 
 The body of the request put to this endpoint should be the json serialization of the
-announcement [message](https://github.com/filecoin-project/storetheindex/blob/main/dagsync/dtsync/message.go#L15)
+announcement [message](https://github.com/ipni/storetheindex/blob/main/announce/message/message.go#L13-L28)
 that would be provided over gossip sub: a representation of the head CID, and the multiaddr of where
 to fetch the advertisement chain.
 

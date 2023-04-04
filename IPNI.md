@@ -470,10 +470,18 @@ Implementers are free to return results as they are found.
 
 The alternative routing systems currently supported is:
  * `ipfs-dht`: equivalent to searching records on the IPFS network.
+ * `legacy`: searches records via BitSwap broadcast over a set of peered nodes; see [Legacy Lookup Cascade](#legacy-lookup-cascade).
 
 A client may discover the list of alternative routing systems supported by a server via sending `OPTIONS` request.
 In response, the server may include `X-IPNI-Allow-Cascade` header key, with value as the comma separated list of alternative routing systems supported.
 The absence of this header key implies that the server does not offer cascading lookups.
+
+##### Legacy Lookup Cascade
+
+The legacy lookup cascade propagates search for providers via BitSwap broadcast protocol across a list of nodes that have explicitly peered with the legacy cascade endpoint. 
+A client may discover the the legacy cascade endpoints provided by a server by sending an `OPTIONS` request.
+In response, the server may include `X-IPNI-Legacy-Cascade-Peering` header key, with value as a multiaddr to which to peer connections.
+There may be multiple peering multiaddrs offered by a server, in which case the header key may be repeated once for each peering address.
 
 #### `GET /cid/{cid}`
 

@@ -287,6 +287,13 @@ components:
             The absence of this header implies that the server does not offer cascading lookups.
           schema:
             type: string
+        X-IPNI-Legacy-Cascade-Peering:
+          description: |
+            The legacy cascade multiaddr to which to peer in order to make content provided only over Bitswap discoverable by an IPNI instance.
+            This header may be repeated multiple times when the server offers more than one peering address.
+            The absence of this header implies that the server does not offer legacy cascade peering.
+          schema:
+            type: string
 externalDocs:
   description: IPNI Specification
   url: https://github.com/ipni/specs/blob/main/IPNI.md

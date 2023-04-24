@@ -483,6 +483,8 @@ A client may discover the the legacy cascade endpoints provided by a server by s
 In response, the server may include `X-IPNI-Legacy-Cascade-Peering` header key, with value as a multiaddr to which to peer connections.
 There may be multiple peering multiaddrs offered by a server, in which case the header key may be repeated once for each peering address.
 
+:warning: **Scheduled to be deprecated**: this lookup cascade is scheduled to be deprecated as soon as the peered nodes advertise content in alternative ways. As a provider, consider using other methods to make content discoverable such as IPNI index provider protocol, or via the IPFS DHT. 
+
 #### `GET /cid/{cid}`
 
 Given a CID as path parameter, returns a list of its content providers. The lookup ignores CID codec

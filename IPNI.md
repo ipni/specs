@@ -443,7 +443,8 @@ The network indexer may then relay that announcement over gossip sub to other in
 broader discover of a provider choosing to selectively announce in this way.
 
 Announcements are sent as HTTP PUT requests to `/announce` on the index node's 'ingest'
-[server](https://github.com/ipni/storetheindex/blob/main/server/ingest/http/server.go#L56)
+[server](https://github.com/ipni/storetheindex/blob/main/server/ingest/http/server.go#L56).
+The previous `/ingest/announce` endpoint has been deprecated.
 Note that the ingest server is not the same http server as the primary publicly exposed query
 server. This is because the index node operator may choose not to expose it, or may protect it so
 that only selected providers are given access to this endpoint due to potential denial of service

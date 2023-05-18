@@ -442,13 +442,15 @@ Alternatively, an announcement can be sent to a specific known network indexer.
 The network indexer may then relay that announcement over gossip sub to other indexers to allow
 broader discover of a provider choosing to selectively announce in this way.
 
-Announcements are sent as HTTP PUT requests
-to [`/ingest/announce`](https://github.com/filecoin-project/storetheindex/blob/main/server/ingest/http/server.go#L50)
-on the index node's 'ingest' server.
+Announcements are sent as HTTP PUT requests to `/announce` on the index node's 'ingest'
+[server](https://github.com/ipni/storetheindex/blob/main/server/ingest/http/server.go#L56)
 Note that the ingest server is not the same http server as the primary publicly exposed query
 server. This is because the index node operator may choose not to expose it, or may protect it so
 that only selected providers are given access to this endpoint due to potential denial of service
 concerns.
+
+If using an assigner service, then announcements are sent as HTTP PUT requests to `/announce` on
+the assigner node's [server](https://github.com/ipni/storetheindex/blob/main/assigner/server/server.go#L48).
 
 The body of the request put to this endpoint should be the json serialization of the
 announcement [message](https://github.com/ipni/storetheindex/blob/main/announce/message/message.go#L13-L28)

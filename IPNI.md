@@ -454,7 +454,7 @@ If using an assigner service, then announcements are sent as HTTP PUT requests t
 the assigner node's [server](https://github.com/ipni/storetheindex/blob/main/assigner/server/server.go#L48).
 
 The body of the request put to this endpoint should be the json serialization of the
-announcement [message](https://github.com/ipni/storetheindex/blob/main/announce/message/message.go#L13-L28)
+announcement [message](https://github.com/ipni/go-libipni/blob/main/announce/message/message.go#L14-L29)
 that would be provided over gossip sub: a representation of the head CID, and the multiaddr of where
 to fetch the advertisement chain.
 

@@ -31,7 +31,6 @@ opportunities to make the transport mechanism swappable.
 
 ## Table of Contents
 
-- [IPNI HTTP Provider](#ipni-http-provider)
 - [Motivation](#motivation)
 - [Background](#background)
     - [Common Data Types](#common-data-types)
@@ -67,7 +66,7 @@ and consistent API specification, we aim to achieve several goals:
 2. **Grouping of Capabilities** -- An implicit grouping of API endpoints is essential because HTTP servers running IPNI
    capabilities often provide multiple functionalities. By organizing the API endpoints under a unified specification,
    it becomes easier to understand and navigate the various capabilities offered by an IPNI provider while avoiding
-   conflict with other APIs such as the IPFS Gateway or Boost.
+   conflict with other APIs such as the [IPFS HTTP Gateway](https://specs.ipfs.tech/http-gateways/) or Boost.
 
 3. **Interoperability and Swappable Transport** -- A formalized API specification facilitates future opportunities for
    interoperability between different IPNI providers and enables the potential for swappable transport mechanisms. By
@@ -83,15 +82,15 @@ opportunities for innovation and collaboration within the IPNI network.
 
 The IPNI HTTP Provider API specification makes use of the following common data types:
 
-- `CID` (Content Identifier): A CID is a self-describing content-addressed identifier that is commonly used in the
+- `CID` (Content Identifier): A [CID](https://docs.ipfs.tech/concepts/content-addressing/) is a self-describing content-addressed identifier that is commonly used in the
   IPFS (InterPlanetary File System) ecosystem. It serves as a unique identifier for content, such as files or
   directories.
 
-- `Multihash`: A Multihash is a self-describing hash format that supports various hash functions. It provides a
+- `Multihash`: A [Multihash](https://multiformats.io/multihash) is a self-describing hash format that supports various hash functions. It provides a
   standardized representation for different hash algorithms, enabling interoperability and flexibility within the IPNI
   ecosystem.
 
-- `Multiaddr`: A Multiaddr is a format for representing network addresses that supports multiple transport protocols. It
+- `Multiaddr`: A [Multiaddr](https://multiformats.io/multiaddr/) is a format for representing network addresses that supports multiple transport protocols. It
   provides a unified way of specifying network addresses, including information such as the network protocol, addressing
   scheme, and transport options.
 
@@ -140,18 +139,31 @@ For example, if the announced URL is `https://ipni-provider.example`, it will be
 
 #### Custom Paths in Multiaddr
 
-IPNI implementers have the option to announce HTTP publisher URLs in `Multiaddr` format. However, this format does not officially support paths. To accommodate custom paths in the announced URLs, implementers can utilize the `httpath` parameter. The handling of `httpath` is similar to that of vanilla HTTP URLs with an additional specified path.
-
-For example, if the announced multiaddr is `/dns/ipni-provider.example/https`, it will be accessed at `https://ipni-provider.example/ipni/v1/ad/head` to fetch the head advertisement. On the other hand, if the announced multiaddr is `/dns/ipni-provider.example/https/httpath/%2Fmy%2Fprefix`, it will be accessed at `https://ipni-provider.example/my/prefix/ipni/v1/ad/head`.
-
-By supporting custom paths through `httpath`, IPNI implementers can enhance the flexibility of their HTTP publisher URLs while maintaining compatibility with the IPNI HTTP Provider API.
+Custom paths in addresses specified as Multiaddr is not currently supported. See related issues below:
+* https://github.com/ipni/go-libipni/issues/42
+* https://github.com/libp2p/specs/pull/550
 
 ## Specification
 
 ### GET `/ipni/v1/ad/head`
 
-This endpoint retrieves the latest advertisement CID published by the provider, along with additional information such
-as the provider's public key and the topic on which the advertisement is published.
+This endpoint retrieves the most recent advertisement CID published by the provider, along with additional information such as the provider's public key and the topic under which the advertisement is published.
+
+Implementers should include explicit Cache-Control headers to manage caching behavior. This is beneficial for the following reasons:
+
+- **Efficient Discovery**: Indexer nodes only need to be aware of the latest head advertisement. Since advertisements are chained, previous ads will be automatically discovered. By setting appropriate cache parameters on the response, indexers can determine how often they need to contact providers to discover a new head. This approach optimizes traffic between the provider and indexer nodes, improving overall efficiency.
+
+- **Frequency of Head Changes**: The head advertisement of a typical provider may not change frequently. By setting cache parameters, providers can indicate the appropriate caching behavior to indexers. This helps indexers decide how often they should request updates for the head advertisement. Setting optimal cache parameters can result in more efficient utilization of network resources.
+
+To disable HTTP caching and ensure that indexers always receive the latest response, providers should set the following Cache-Control header:
+
+```
+Cache-Control: no-cache, no-store, must-revalidate
+```
+
+Alternatively, if providers want to allow accepting a cached response and revalidating it in the background, they should use an appropriate `Cache-Control` header with a `max-age` value that reflects the frequency at which the provider generates new advertisements. Additionally, the `stale-while-revalidate` directive can be used to specify a period during which a stale cached response can still be served while a revalidation request is sent in the background.
+
+For more information on caching headers, you can refer to [RFC5861](https://datatracker.ietf.org/doc/html/rfc5861).
 
 #### Response
 
@@ -205,7 +217,16 @@ The following represents an abbreviated example of head advertisement response i
 
 ### GET `/ipni/v1/ad/{CID}`
 
-Returns the content associated with an advertisement CID and its entries.
+This endpoint retrieves the content associated with an advertisement CID and its entries. 
+The `CID` specified in the URL parameter must match the response body, as the data returned by this endpoint is immutable.
+
+To ensure proper caching and immutability, implementers must include the following response header:
+
+```
+Cache-Control: public, max-age=29030400, immutable
+```
+
+By setting this response header, it instructs client-side caches and intermediate proxies to store the response for a long duration (`max-age=29030400`), as well as treat it as immutable. This helps improve performance and ensures that the same content is served consistently for the specified `CID`.
 
 ### Response
 
@@ -269,9 +290,7 @@ communication and data integrity. Here are the key security aspects:
   between clients and the IPNI HTTP provider. TLS encrypts the data during transmission, protecting it from unauthorized
   access and tampering.
 
-- **Pagination and Maximum Content Length**: Implementers should consider implementing pagination mechanisms and setting
-  a maximum content length for responses to prevent potential abuse or resource exhaustion attacks. This helps ensure
-  that the API remains performant and resilient to malicious actors.
+- **Pagination and Maximum Content Length**: Implementers should take into account setting a maximum content length for responses to mitigate potential abuse or resource exhaustion attacks. This helps ensure the API's performance and resilience against malicious actors. We suggest a maximum content length of 4MB. It is important to note that content pagination is achieved using IPLD links. For example, advertisement entry chunks are linked together using the `Next` field, forming a linked list of multihashes. Therefore, implementors must ensure that the generated entry chunks remain below the maximum content length accepted by the indexers.
 
 - **Signature Validation**: Implementers should validate the signatures associated with the head advertisement CID to
   verify the authenticity and integrity of the data. Signature validation ensures that the data is generated by the
@@ -303,7 +322,6 @@ transport.
 ## Related Resources
 
 * [IPNI Specification](IPNI.md)
-* [`httpath` support in `Multiaddr`](https://github.com/ipni/go-libipni/issues/42)
 
 ## Copyright
 

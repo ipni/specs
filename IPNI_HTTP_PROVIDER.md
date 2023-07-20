@@ -217,7 +217,8 @@ The following represents an abbreviated example of head advertisement response i
 
 ### GET `/ipni/v1/ad/{CID}`
 
-This endpoint retrieves the content associated with an advertisement CID and its entries. 
+This endpoint retrieves the content associated with an advertisement CID and its entries.
+All links encountered during the traversal of the head advertisement are served by this endpoint.
 The `CID` specified in the URL parameter must match the response body, as the data returned by this endpoint is immutable.
 
 To ensure proper caching and immutability, implementers must include the following response header:
@@ -277,7 +278,10 @@ The following snippet shows an example of advertisement entries encoded in `DAG-
         "bytes": "EiDYa/LrNYDdHjSlKGXpHjc1IyHds9Xdi/p8d25Q5UE/bQ"
       }
     }
-  ]
+  ],
+  "Next": {
+    "/": "baguqeeraog3uqu7au2mctrfslzvua5lzl3wyoquqhbyoig6hnputypej5guq"
+  }
 }
 ```
 

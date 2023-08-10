@@ -147,7 +147,7 @@ Custom paths in addresses specified as Multiaddr is not currently supported. See
 
 ### GET `/ipni/v1/ad/head`
 
-This endpoint retrieves the most recent advertisement CID published by the provider, along with additional information such as the provider's public key and the topic under which the advertisement is published.
+This endpoint retrieves the most recent advertisement CID published by the provider, along with additional information such as the provider's public key and the topic under which the advertisement is announced.
 
 Implementers should include explicit Cache-Control headers to manage caching behavior. This is beneficial for the following reasons:
 
@@ -170,7 +170,7 @@ For more information on caching headers, you can refer to [RFC5861](https://data
 The response from the `/ipni/v1/ad/head` endpoint includes the following fields:
 
 - **`head`** (required): The CID of the latest advertisement published by the provider.
-- **`topic`** (optional): The topic name on which the advertisement is published. If not specified, the default value
+- **`topic`** (optional): The topic name on which the advertisement is announced. If not specified, the default value
   of `/indexer/ingest/mainnet` is assumed.
 - **`pubkey`** (required): The serialized public key of the provider in protobuf format using the libp2p standard. The
   public key can be marshalled using

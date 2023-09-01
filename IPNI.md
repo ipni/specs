@@ -353,115 +353,95 @@ type Provider struct {
 There are two ways that the provider advertisement chain can be made available for consumption by
 indexer nodes.
 
-1. As a [graphsync](https://github.com/ipfs/go-graphsync) endpoint on a libp2p host.
-2. As a set of files fetched over HTTP.
+1. As a set of files fetched via HTTP.
+2. As a set of files fetched via HTTP over libp2p
 
-There are two parts to the transfer protocol. The providing of the advertisement chain itself, and
-a 'head' protocol for indexers to query the provider on what it's most recent advertisement is.
+Older advertisement publishers supported serving advertisement via a data-transfer/graphsync on a libp2p host. Support for this has been discontinued. 
 
-#### Libp2p
+There are two parts to the transfer protocol. Serving the advertisement chain itself, and serving a 'head' resource that returns information about the most recent advertisement on the publisher's advertisement chain.
 
-On libp2p hosts, graphsync is used for providing the advertisement chain.
-
-* Graphsync is configured on the common graphsync multiprotocol of the libp2p host.
-* Requests for index advertisements can be identified by
-    * The use of
-      a ['dagsync'](https://github.com/filecoin-project/storetheindex/blob/main/dagsync/dtsync/voucher.go#L17-L24)
-      voucher in the request.
-    * A CID of either the most recent advertisement, or a a specific Entries pointer.
-    * A selector either for the advertisement chain, or for an entries list.
-
-A reference implementation of the core graphsync provider is available in
-the [dagsync](https://github.com/filecoin-project/storetheindex/blob/main/dagsync) package, and it's
-integration into a full provider is available
-in [index-provider](https://github.com/filecoin-project/index-provider).
-
-On these hosts, a custom `head` multiprotocol is exposed on the libp2p host as a way of learning the
-most recent current advertisement.
-The multiprotocol is
-named [`/legs/head/<network-identifier>/<version>`](https://github.com/filecoin-project/storetheindex/blob/main/dagsync/p2p/protocol/head/head.go#L40)
-. The protocol itself is implemented as an HTTP TCP stream, where a request is made for the `/head`
-resource, and the response body contains the string representation of the root CID.
+The [IPNI HTTP Provider Specification](https://github.com/ipni/specs/blob/main/IPNI_HTTP_PROVIDER.md#ipni-http-provider) provides a detailed description of advertisement requests and responses.
 
 #### HTTP
 
-The IPLD objects of advertisements and entries are represented as files named as their CIDs in an
-HTTP directory. These files are immutable, so can be safely cached or stored on CDNs.
+All IPNI HTTP requests use the IPNI URL path prefix, `/ipni/v1/ad/`. Indexers and advertisement publishers implicitly use and expect this prefix to preceed the requested resource.
 
-The head protocol is the same as above, but not wrapped in a libp2p multiprotocol.
-A client wanting to know the latest advertisement CID will ask for the file named `head` in the same
-directory as the advertisements/entries, and will expect back
-a [signed response](https://github.com/filecoin-project/storetheindex/blob/main/dagsync/httpsync/message.go#L60-L64)
-for the current head.
+The IPLD objects of advertisements and entries are represented as files named by their CIDs in an HTTP directory. These files are immutable, so can be safely cached or stored on CDNs.
+To fetch an advertisement or entries file by CID, the request made by the indexer to the publisher is `GET /ipni/v1/ad/{CID}`. 
+
+A client wanting to know the latest advertisement CID will ask for a resource named `head` on the IPNI path: `/ipni/v1/ad/head`. 
+The response will be the serialized signed Head message for the current advertisement chain head:
+```ipldsch
+# SignedHead provides information about the head advertisement CID.
+type SignedHead struct {
+    # head is an IPLD link to the latest advertisement published by a provider. If there are no advertisements available, then the CID within the link is undefined.
+    head Link
+    # topic is the topic name on which the advertisement is published. If not specified, the default value of /indexer/ingest/mainnet is assumed.
+    topic optional String
+    # pubkey is the serialized public key of the provider in protobuf format using the libp2p standard.
+    pubkey Bytes
+    # sig is the signature associated with the head CID, obtained by concatenating the bytes of the head CID and the UTF-8 bytes of the topic (if present).
+    sig Bytes
+}
+```
+An example of the deserialized [signed message](https://pkg.go.dev/github.com/ipni/go-libipni@v0.5.0/dagsync/ipnisync/head#SignedHead) in Golang.
+
+#### HTTP over Libp2p
+
+On libp2p hosts, HTTP is served over libp2p to provide the advertisement chain. Other than being served over libp2p it operates the same as when served over a plain HTTP server.
 
 ### Announcements
 
-Announcements signal change to the advertisement chain itself. Announcement messgaes contain:
+Announcements signal change to the advertisement chain itself. [Announcement messages](https://pkg.go.dev/github.com/ipni/go-libipni@v0.5.0/announce/message#Message) contain:
 
-> **TODO**: add specification of announcement message and spell out that it's encoded as CBOR with
-> edge
-> cases on ExtraData + OrigPeer
+- CID that identifies the advertisement being announced.
+- Set of multiaddrs that specify where the announced advertisement is available.
+- Extra data that is optional data used for certain recipients. For example it may hold a storage provider ID when relayed through pubsub gateways.
+- OrigPeer field that may be present if a message is received on one network is republished over another.
+
+> **TODO**: add specification of announcement message and spell out that it's encoded as CBOR with edge cases on ExtraData + OrigPeer
 
 Indexers may be notified of changes to advertisements as a way to reduce the latency of ingestion,
-and for discovery and registration of new providers.
+and for the discovery of new providers.
 
-Once indexers observe a new provider, they should adaptively poll the provider for new content,
-which provides the basis of understanding what content is currently available.
+In response to receiving an announcement, an indexer will perform a sync with the advertisement publisher indicated in the announcement message. This will be done at a time determined by the indexer, generally within seconds to minutes.
+
+Once indexers observe a new provider, they typically periodically poll the provider's publisher for new content unless an announcement is received before the next poll is scheduled. Receiving announcements and/or periodic polling provides the basis for indexers to understand what content is currently available.
 
 The indexer will maintain a policy for when advertisements from a provider are considered valid. An
 example policy may be
 
-* A provider must be available for at least 2 days before its advertisements will be returned to
+* If a provider cannot be dialed for 2 days, its advertisements will no longer be returned to
   clients.
-* If a provider cannot be dialed for 3 days, it's advertisements will no longer be returned to
-  clients.
-* If a provider starts a new chain, previous advertisements now no longer referenced will not be
+* If a provider starts a new chain, previous advertisements that are no longer referenced will not be
   returned after 1 day of not being referenced.
 * If a provider cannot be dialed for 2 weeks, previous advertisements downloaded by the indexer will
-  be garbage collected, and will need to be re-synced from the provider.
+  become unavailable and will need to be re-synced from the provider.
 
-There are two ways that a provider may pro-actively alert indexer(s) of new content availability:
+There are two means of sending an announcement to indexers, used by providers to pro-actively alert indexer(s) of new content availability:
 
-1. Gossipsub announcements
-2. HTTP announcements
+1. Gossipsub announcements (broadcast to all indexers subscribed to topic)
+2. HTTP announcements (sent to one or more specific indexers)
+
+Both of these methods send an announce [`Message`](https://pkg.go.dev/github.com/ipni/go-libipni/announce/message#Message) to the indexer to announce the availability of a new advertisement. 
 
 #### Gossipsub
 
-The announcement contains the CID of the head and the multiaddr (either the libp2p host or the HTTP
-host) where it should be fetched from. The format
-is [here](https://pkg.go.dev/github.com/filecoin-project/storetheindex/dagsync/dtsync#Message).
-
-It is sent over a gossip sub topic, that defaults to `/indexer/ingest/<network>`. For our production
-network, this is `/indexer/ingest/mainnet`.
-
-The dagsync provider will generate gossip announcements automatically on it's host.
+When an announce `Message` is sent over gossip pub-sub, the topic is `/indexer/ingest/<network>`. For our production network, this is `/indexer/ingest/mainnet`. The message is send to all connected peers that are subscribed to the topic.
 
 #### HTTP
 
 Alternatively, an announcement can be sent to a specific known network indexer.
-The network indexer may then relay that announcement over gossip sub to other indexers to allow
-broader discover of a provider choosing to selectively announce in this way.
+The network indexer may then relay that announcement over gossip pub-sub to other indexers to allow broader discovery of a provider choosing to selectively announce to specific indexer(s).
 
-Announcements are sent as HTTP PUT requests to `/announce` on the index node's 'ingest'
-[server](https://github.com/ipni/storetheindex/blob/main/server/ingest/http/server.go#L56).
-The previous `/ingest/announce` endpoint has been deprecated.
-Note that the ingest server is not the same http server as the primary publicly exposed query
-server. This is because the index node operator may choose not to expose it, or may protect it so
-that only selected providers are given access to this endpoint due to potential denial of service
-concerns.
+Announcements are sent as HTTP PUT requests to `/announce` on the indexer node's 'ingest' server. The request body is the JSON serialization of the announcement [`Message`](https://pkg.go.dev/github.com/ipni/go-libipni/announce/message#Message) that is otherwise provided over gossip pub-sub. Note that the ingest server is not the same HTTP server as the query server, and these are bound to different TCP ports. This is because the index node operator may choose to expose these differently to limit access to these endpoints.
 
 If using an assigner service, then announcements are sent as HTTP PUT requests to `/announce` on
 the assigner node's [server](https://github.com/ipni/storetheindex/blob/main/assigner/server/server.go#L48).
 
-The body of the request put to this endpoint should be the json serialization of the
-announcement [message](https://github.com/ipni/go-libipni/blob/main/announce/message/message.go#L14-L29)
-that would be provided over gossip sub: a representation of the head CID, and the multiaddr of where
-to fetch the advertisement chain.
-
 ### Querying Records
 
 An indexer node can be queried over HTTP for a multihash or a CID. This section provides a summary of the HTTP query APIs. A full OpenAPI specification of the APIs can be found [here](schemas/v1/openapi.yaml).
-
 
 #### Cascading Lookup
 
@@ -687,7 +667,8 @@ The following lists the libraries and implementations of IPNI protocol:
 
 ## Related Resources
 
-> **TODO**: Catalog any other links a reader might find useful.
+- Golang [ipnisync package](https://pkg.go.dev/github.com/ipni/go-libipni@v0.5.0/dagsync/ipnisync) reference
+- [IPNI HTTP Provider Specification](https://github.com/ipni/specs/blob/main/IPNI_HTTP_PROVIDER.md#ipni-http-provider)
 
 ## Copyright
 

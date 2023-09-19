@@ -54,7 +54,6 @@ retrieval address and protocol.
     * [Querying Records](#querying-records)
         + [`GET /cid/{cid}`](#get-cidcid)
         + [`GET /multihash/{multihash}`](#get-multihashmultihash)
-        + [`POST /multihash`](#post-multihash)
     * [Example Responses](#example-responses)
         + [JSON Find Response](#json-find-response)
         + [JSON Batch Find Response](#json-batch-find-response)
@@ -511,42 +510,6 @@ Given a multihash as path parameter, returns a list of its content providers.
 * `application/json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Find Response](#json-find-response) example.
 * `application/x-ndjson` - one-per-line NDJSON encoded [`ProviderRecord`s][provider-record-schema]. See [NDJSON Streaming Records](#ndjson-streaming-records) example.
 
-
-###### Status Code
-
-* `200` - OK
-* `400` - Invalid multihash.
-* `404` - No provider records found for given multihash.
-
-#### `POST /multihash`
-
-Given a list of multihashes as request body, batch finds the list of their content providers.
-
-##### Request
-
-_Required_. JSON encoded list of multihashes to look up, where each multihash is encoded as its
-Base58 string representation. See [`FindRequest`][find-request-schema] schema.
-
-###### Example
-
-```json
-{
-  "Multihashes": [
-    "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
-    "oOQCIPNDQHkqUhHx5pVtF6ijer8cljI1oJ0oh710UqcamtuP"
-  ]
-}
-```
-
-##### Query Parameters
-
-* `cascade` - _Optional_. The comma separated alternative routing systems to which the lookup is cascaded in addition to searching IPNI index records. If unspecified, only IPNI index records are searched. See [Cascading Lookup](#cascading-lookup)
-
-
-##### Response
-
-* `application-json` - JSON encoded [`FindResponse`][find-response-schema]. See [JSON Batch Find Response](#json-batch-find-response) example.
-
 ###### Status Code
 
 * `200` - OK
@@ -582,55 +545,6 @@ The snippet blow shows a formatted JSON response to a find query for a single mu
             "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
             "Addrs": [
               "/ip4/149.5.22.10/tcp/24002"
-            ]
-          }
-        }
-      ]
-    }
-  ]
-}
-```
-
-#### JSON Batch Find Response
-
-The snippet blow shows a formatted JSON response to a batch find query for two multihashes that resulted in two provider records being found for one multihash and one record for the other:
-
-```json
-{
-  "MultihashResults": [
-    {
-      "Multihash": "EiDVNlzli2ONH3OslRv1Q0BRCKUCsERWs3RbthTVu6Xptg==",
-      "ProviderResults": [
-        {
-          "ContextID": "YmFndXFlZXJha3ppdzRwaWxuZmV5ZGFtNTdlZ2RxZTRxZjR4bzVuZmxqZG56emwzanV0YXJtbWltdHNqcQ==",
-          "Metadata": "gBI=",
-          "Provider": {
-            "ID": "QmQzqxhK82kAmKvARFZSkUVS6fo9sySaiogAnx5EnZ6ZmC",
-            "Addrs": [
-              "/dns4/elastic.dag.house/tcp/443/wss"
-            ]
-          }
-        },
-        {
-          "ContextID": "AXESID1YhQwxum55WMSHXI6EQbtVpnhm7QwGpDPYCm5bjwbr",
-          "Metadata": "kBKjaFBpZWNlQ0lE2CpYKAABgeIDkiAg7H0Gb8ZK4LC8aijKk56XS4diZvoLv9hcDz6iiE0gJhNsVmVyaWZpZWREZWFs9W1GYXN0UmV0cmlldmFs9Q==",
-          "Provider": {
-            "ID": "12D3KooW9yi2xLhXds9HC4x9vRN99mphq6ds8qN2YRf8zks1F32G",
-            "Addrs": [
-              "/ip4/149.5.22.10/tcp/24002"
-            ]
-          }
-        }
-      ],
-      "Multihash": "oOQCIPNDQHkqUhHx5pVtF6ijer8cljI1oJ0oh710UqcamtuP",
-      "ProviderResults": [
-        {
-          "ContextID": "AXESIHKH83SGwMdaaJZfXNu6yXZtNHLUHT+llGMryKHXG8Wb",
-          "Metadata": "gBKQEqNoUGllY2VDSUTYKlgoAAGB4gOSICAYVAKmPqL1mpkiiDhd9iBaXoU/3rXorXxzjiyESP4hB2xWZXJpZmllZERlYWz0bUZhc3RSZXRyaWV2YWz1",
-          "Provider": {
-            "ID": "12D3KooWE8yt84RVwW3sFcd6WMjbUdWrZer2YtT4dmtj3dHdahSZ",
-            "Addrs": [
-              "/ip4/85.11.148.122/tcp/24001"
             ]
           }
         }

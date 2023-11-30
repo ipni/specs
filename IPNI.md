@@ -286,7 +286,7 @@ Specified protocols are expected to be ordered in increasing order.
       protocol `0x0900` ([`transport-bitswap`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L147)
       in the multicodec table).
     * no following metadata.
-* filecoin graphsync
+* Filecoin Graphsync
     * `uvarint`
       protocol `0x0910`  ([`transport-graphsync-filecoinv1`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L148)
       in the multicodec table).
@@ -294,7 +294,7 @@ Specified protocols are expected to be ordered in increasing order.
         * PieceCID, a link
         * VerifiedDeal, boolean
         * FastRetrieval, boolean
-* http
+* HTTP
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.
 

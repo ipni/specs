@@ -74,7 +74,7 @@ extended to support any retrieval mechanism without the need for centralised con
 the core advertisement structure.
 
 The advertisements are designed to offer a verifiable catalogue of content hosted by a provider over
-time as a collection of [multihahses](https://github.com/multiformats/multihash). The protocol
+time as a collection of [multihashes](https://github.com/multiformats/multihash). The protocol
 offers support for multihash grouping, provider address change, retrieval protocol change, and
 separation of content provider from content advertiser, a.k.a. publisher, without the need for
 re-advertisement.
@@ -161,7 +161,7 @@ tolerate very long ad chains as long as they continuously listen to advertisemen
 relatively close to the chain's _head_, i.e. the latest advertisement in the chain.
 
 Once an advertisement chain is processed, retrieval clients can lookup the resulting index records
-vaia query API exposed by IPNI nodes. Given a CID or multihash, the API provides a list of index
+via a query API exposed by IPNI nodes. Given a CID or multihash, the API provides a list of index
 records corresponding to it. Each index record captures the identity of the content provider, its
 address and the protocols over which the data can be retrieved from that provider. A retrieval
 client can then further filter the providers list, e.g. by protocol, and retrieve the content
@@ -187,7 +187,7 @@ their entries are then processed in order from earliest to head.
 
 An Advertisement is represented as an IPLD node with the following schema:
 
-```ipldch
+```ipldsch
 type Advertisement struct {
     PreviousID optional Link
     Provider String
@@ -224,7 +224,7 @@ type Advertisement struct {
   specified in the advertisement in favor of those specified in the `ExtendedProvider`. The values
   in the direct advertisement should still be set to a compatible endpoint for content routers that
   do not understand full `ExtendedProvider` semantics.
-    * `Extendedprovider` is not valid for an `IsRm` advertisement. It should be ignored if
+    * `ExtendedProvider` is not valid for an `IsRm` advertisement. It should be ignored if
       specified.
 
 ![index-ad-ipld-graph](resources/index-ad-ipld-graph.png)
@@ -283,18 +283,18 @@ Specified protocols are expected to be ordered in increasing order.
 
 * Bitswap
     * `uvarint`
-      protocol `0x0900` ([`TransportBitswap`](https://github.com/multiformats/multicodec/blob/master/table.csv#L133)
+      protocol `0x0900` ([`transport-bitswap`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L147)
       in the multicodec table).
     * no following metadata.
-* filecoin graphsync
+* Filecoin Graphsync
     * `uvarint`
-      protocol `0x0910`  ([`TransportGraphsyncFilecoinv1`](https://github.com/multiformats/multicodec/blob/master/table.csv#L134)
+      protocol `0x0910`  ([`transport-graphsync-filecoinv1`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L148)
       in the multicodec table).
     * the following bytes should be a cbor encoded struct of:
         * PieceCID, a link
         * VerifiedDeal, boolean
         * FastRetrieval, boolean
-* http
+* HTTP
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.
 
@@ -363,7 +363,7 @@ The [IPNI HTTP Provider Specification](https://github.com/ipni/specs/blob/main/I
 
 #### HTTP
 
-All IPNI HTTP requests use the IPNI URL path prefix, `/ipni/v1/ad/`. Indexers and advertisement publishers implicitly use and expect this prefix to preceed the requested resource.
+All IPNI HTTP requests use the IPNI URL path prefix, `/ipni/v1/ad/`. Indexers and advertisement publishers implicitly use and expect this prefix to precede the requested resource.
 
 The IPLD objects of advertisements and entries are represented as files named by their CIDs in an HTTP directory. These files are immutable, so can be safely cached or stored on CDNs.
 To fetch an advertisement or entries file by CID, the request made by the indexer to the publisher is `GET /ipni/v1/ad/{CID}`. 
@@ -574,8 +574,8 @@ The following lists the libraries and implementations of IPNI protocol:
   implementation in Golang
 - [`ipni/index-provider`](https://github.com/filecoin-project/index-provider) - Golang libraries to
   advertise content to IPNI nodes.
-- [`elastic-ipfs/indexer-labda`](https://github.com/elastic-ipfs/indexer-lambda) - A service to
-  advertise content from CAR files using AWS Lambda.
+- [`web3-storage/ipni`](https://github.com/web3-storage/ipni) - JavaScript library for encoding and
+  signing IPNI advertisements.
 - [`MarcoPolo/http-index-provider-example`](https://github.com/MarcoPolo/http-index-provider-example)
   An example HTTP index provider using HTTP protocol in Rust.
 

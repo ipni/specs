@@ -100,8 +100,9 @@ Here are the non-goals for the IPNI federation protocol:
   assisting in maintaining the eventual consistency of the index.
 
 * **Snapshot**: A snapshot refers to a captured state of the index records at a particular point in time consisting of
-  the providers list known by the indexer, the latest processed advertisement CID for each provider and an epoch number.
-  IPNI instances can share snapshots with each other to quickly update and reconcile their content.
+  the providers list known by the indexer, the latest processed advertisement CID for each provider, an epoch number and
+  link to the previous snapshot. IPNI instances can share snapshots with each other to quickly update and reconcile
+  their content.
 
 ## Specification
 
@@ -222,7 +223,7 @@ Instance A and Instance B both know Provider P1, but they have different latest 
 This represents a divergence in the advertisement chain, and careful reconciliation is required:
 
 1. Instance A and B determine which advertisement is the later one in the chain of advertisements provided by P1.
-2. They converge on the advertisement has been published the latest, i.e. has the shorter distance to P1's current 
+2. They converge on the advertisement has been published the latest, i.e. has the shorter distance to P1's current
    advertisement head.
 
 While traversing advertisement chains, instances should prefer pulling ad chain from eachother's mirror instead of going
@@ -376,7 +377,8 @@ The following represents and abbreviated federation state snapshot encoded in `D
 Implementers should include explicit Cache-Control headers to manage caching behavior. This is beneficial for the
 following reasons:
 
-- **Efficient Discovery**: Indexer nodes only need to be aware of the latest head federation state. Since federation state snapshots
+- **Efficient Discovery**: Indexer nodes only need to be aware of the latest head federation state. Since federation
+  state snapshots
   are chained, previous ads will be automatically discovered. By setting appropriate cache parameters on the response,
   indexers can determine how often they need to contact providers to discover a new head. This approach optimizes
   traffic between the provider and indexer nodes, improving overall efficiency.

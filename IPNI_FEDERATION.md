@@ -30,8 +30,8 @@ The velocity and and extent of content discovery across IPNI instances is entire
 As a result, there is no guarantee that a content consumer would find what they are looking for by searching any one of
 the instances.
 
-This document presents a protocol by which multiple IPNI instances can collaborate and guarantee that if an index record
-exists it will eventually be discoverable across all of collaborating instances.
+This document presents a way to get consistent snapshots across a set of collaborating IPNI indexers and return
+consistent set of providers and metadata for a given CID.
 
 ## Background
 
@@ -68,18 +68,7 @@ intricacies and mechanisms, laying the foundation for a truly inter-planetary sc
 
 The underlying motivation behind enhancing IPNI is manifold. Foremost, guaranteeing an eventually consistent view of
 index records across multiple IPNI instances holds the potential for transformative benefits. Such consistency paves the
-way for:
-
-1. **Improved User Experience**: Users can anticipate and rely upon a predictable performance, irrespective of the
-   specific IPNI instance they access.
-2. **Comparative Analysis**: IPNI instances can be objectively compared, offering insights into their index record
-   completeness, thereby driving competitive improvements.
-3. **Content Verification and Ranking**: Content providers gain tools to check, verify, and rank their content,
-   fostering trust and quality control in the system.
-4. **Collaborative Efficiency**: Multiple IPNI instances can opportunistically collaborate, streamlining the ingestion
-   of records and eliminating redundancy.
-
-Recognizing these benefits, this document outlines the protocol to facilitate the benefits listed above.
+way for reducing trust in an individual indexer.
 
 ## Non-goals
 
@@ -88,7 +77,7 @@ Here are the non-goals for the IPNI federation protocol:
 
 * **Permissionless Membership**: This specification assumes a permissioned network, where the membership is controlled
   and not open to arbitrary participants.
-* **Real-time syncrhonization**: The protocol strives for eventual consistency, but real-time synchronization across all
+* **Real-time synchronization**: The protocol strives for eventual consistency, but real-time synchronization across all
   nodes, especially in a globally distributed setup, is not the objective.
 * **Network Topology Design**: The IPNI federation protocol does not define or restrict the underlying network topology.
   Whether nodes are structured in a mesh, star, or hierarchical format, the protocol remains agnostic.

@@ -145,8 +145,9 @@ A snapshot consists of:
 
 * **Epoch**: a monotonically increasing value that represents the time at which snapshot was formed.
 * **Vector Clock**: the monotonically increasing vector clock value that corresponds to the IPNI instance.
-* **Provider to Advertisement CID Map**: a map of provider ID to the latest advertisement CID processed by the IPNI
-  instance.
+* **Provider to Ingest State Map**: a map of provider ID to the latest advertisement CID processed by the IPNI
+  instance, along with an optional advertisement height if known by the indexer. The height is provided as a _hint_ to
+  other indexers in order to aid the reconciliation and conflict resolution process.
 
 As the IPNI federation protocol continues to evolve, these specification components—initialization and periodic
 snapshots—act as the backbone, ensuring that the system remains resilient, efficient, and, most importantly,
@@ -340,17 +341,24 @@ It contains the following fields:
 
 - **`epoch`** (required): The epoch to which indexer's federation state snapshot is associated.
 - **`vc`** (required): The monotonically increasing vector clock.
-- **`providers`** (required): The map of provider peer ID to its latest advertisement CID processed by the indexer.
+- **`providers`** (required): The map of provider peer ID to its latest ingest state as known by the indexer. The ingest
+  state consists of the latest processed advertisement CID and its optional corresponding height if known by the
+  indexer.
 - **`previous`** (required): The link to previous federation state snapshot.
 
 The following snippet represents the IPLD schema of a federation state snapshot:
 
 ```ipldsch
-type FederationStateSnapshot  struct {
+type FederationStateSnapshot struct {
     epoch     uint64
     vc        uint64
-    providers {String:Link}
-    previous  Link
+    providers {String:IngestState}
+    previous optional Link
+}
+
+type IngestState struct {
+   lastAdvertisement Link
+   height  optional  uint64
 }
 ```
 
@@ -363,12 +371,21 @@ The following represents and abbreviated federation state snapshot encoded in `D
   "epoch": 123456,
   "vc": 42,
   "providers": {
-    "123bAff1edF1sh...": {"/": "baguqeeraog3uqu7au2mctrfslzvua5lzl3wyoquqhbyoig6hnputypej2uvq"},
-    "123hUngry10bstER...": {"/": "baguqeeranqfhpdacbe7ls44ndcgeis6yufvhk4zntydlqfaplzz6mdyuu6gq"}
+    "123bAff1edF1sh...": {
+      "lastAdvertisement": {
+        "/": "baguqeeraog3uqu7au2mctrfslzvua5lzl3wyoquqhbyoig6hnputypej2uvq"
+      },
+      "height": 1413
+    },
+    "123hUngry10bstER...": {
+      "lastAdvertisement": {
+        "/": "baguqeeranqfhpdacbe7ls44ndcgeis6yufvhk4zntydlqfaplzz6mdyuu6gq"
+      }
+    },
+    "previous": {
+      "/": "baguqeerazx6qhbdzckrnuwvl3reqnrpysz3ry5qtdxzpo23losoeiywij65a"
+    }
   }
-  "previous": {
-    "/": "baguqeerazx6qhbdzckrnuwvl3reqnrpysz3ry5qtdxzpo23losoeiywij65a"
-  },
 }
 ```
 

@@ -155,7 +155,7 @@ its existence to the network.
 IPNI nodes are responsible for continuously listening to provider announcements. Once they receive
 an announcement, they fetch the advertisement and walk its chain to effectively construct the
 current list of content hosted by the provider. Because the advertisements themselves are immutable,
-IPNI nodes can infer seem from unseen advertisements and only walk the portion of the chain that has
+IPNI nodes can infer seen from unseen advertisements and only walk the portion of the chain that has
 not seen before. This property enables efficient traversal of the chain and allows IPNI nodes to
 tolerate very long ad chains as long as they continuously listen to advertisements and stay
 relatively close to the chain's _head_, i.e. the latest advertisement in the chain.
@@ -197,6 +197,7 @@ type Advertisement struct {
     ContextID Bytes
     Metadata Bytes
     IsRm Bool
+    SeqNum optional Int
     ExtendedProvider optional ExtendedProvider
 }
 ```
@@ -219,6 +220,15 @@ type Advertisement struct {
   remaining format of metadata. The opaque data is send to the provider when retrieving content for
   the provider to use to retrieve the content. Storetheindex operators may limit the length of this
   field, and it is recommended to keep it below 100 bytes.
+* **`SeqNum`** is a monotonically increasing integer that starts at 0 and is incremented for each
+  additional advertisement added to the chain. It is an optional field for the purpose of backward
+  compatibility with older advertisements that lack a `SeqNum` field. `SeqNum` is used for the
+  calculation of chain distance between different advertisements. An advertisement chain, whose
+  advertisements do not have a sequence number, can start adding advertisements with a `SeqNum` at
+  any time, but must continue including an increasing `SeqNum` field in advertisements onward. The
+  maximum value for `SeqNum` is 2<sup>53</sup>-1. It is not expected for any chain to reach this
+  sequence, and restarting `SeqNum` may result in an inaccurate distance between advertisements
+  spanning the reset.
 * **`ExtendedProvider`** is an optional field; if specified, indexers which understand
   the `ExtendedProvider` extension should ignore the `Provider`, `Addresses`, and `Metadata`
   specified in the advertisement in favor of those specified in the `ExtendedProvider`. The values

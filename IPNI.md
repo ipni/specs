@@ -226,9 +226,7 @@ type Advertisement struct {
   calculation of chain distance between different advertisements. An advertisement chain, whose
   advertisements do not have a sequence number, can start adding advertisements with a `SeqNum` at
   any time, but must continue including an increasing `SeqNum` field in advertisements onward. The
-  maximum value for `SeqNum` is 2<sup>53</sup>-1. It is not expected for any chain to reach this
-  sequence, and restarting `SeqNum` may result in an inaccurate distance between advertisements
-  spanning the reset.
+  maximum value for `SeqNum` is 2<sup>53</sup>-1.
 * **`ExtendedProvider`** is an optional field; if specified, indexers which understand
   the `ExtendedProvider` extension should ignore the `Provider`, `Addresses`, and `Metadata`
   specified in the advertisement in favor of those specified in the `ExtendedProvider`. The values
@@ -309,6 +307,17 @@ Specified protocols are expected to be ordered in increasing order.
     * the following bytes are not yet defined.
 
 If the `Metadata` field is not specified, the advertisement is treated as address update only.
+
+#### SeqNum
+
+The sequence number field is optional only for backwards compatibility. It should be included as soon as possible by both new and existing index providers to enable indexer functionality that uses it. Omitting the `SeqNum` will result in degraded indexer functionality relating to distance calculation, reporting, indexer synchronization. Future indexer versions may choose to only accept new advertisements that have a sequence number.
+
+A `SeqNum` value higher then the maximum of 2<sup>53</sup>-1 (9007199254740992) values will not be recognized and instead seen as 0. It is not expected for any chain to reach this
+  sequence as that would mean it has over nine quintillion advertisements. If this were reached, then `SeqNum` should be reset to 0, which may result in an inaccurate distance calculations between advertisements spanning the reset.
+
+If `SeqNum` is present then it is included in the data that the advertisement signature is calculated over.
+
+Indexers are not required to validate that `SeqNum` is monotonically increasing, but an incorrect sequence number may result in incorrect indexing information or may be ignored resulting in some indexing features being unavailable for that chain's provider. If an indexer depends on the sequence number for more than display and reporting purposes, it can choose not index advertisement chains that do not have a monotonically increasing `SeqNum`.
 
 #### ExtendedProvider
 

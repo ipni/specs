@@ -155,7 +155,7 @@ its existence to the network.
 IPNI nodes are responsible for continuously listening to provider announcements. Once they receive
 an announcement, they fetch the advertisement and walk its chain to effectively construct the
 current list of content hosted by the provider. Because the advertisements themselves are immutable,
-IPNI nodes can infer seem from unseen advertisements and only walk the portion of the chain that has
+IPNI nodes can infer seen from unseen advertisements and only walk the portion of the chain that has
 not seen before. This property enables efficient traversal of the chain and allows IPNI nodes to
 tolerate very long ad chains as long as they continuously listen to advertisements and stay
 relatively close to the chain's _head_, i.e. the latest advertisement in the chain.
@@ -197,6 +197,7 @@ type Advertisement struct {
     ContextID Bytes
     Metadata Bytes
     IsRm Bool
+    SeqNum optional Int
     ExtendedProvider optional ExtendedProvider
 }
 ```
@@ -219,6 +220,12 @@ type Advertisement struct {
   remaining format of metadata. The opaque data is send to the provider when retrieving content for
   the provider to use to retrieve the content. Storetheindex operators may limit the length of this
   field, and it is recommended to keep it below 100 bytes.
+* **`SeqNum`** is a monotonically increasing integer starting at 0 or at the current length of the
+  advertisement chain, and is incremented for each additional advertisement added to the chain. It
+  is an optional field for the purpose of backward compatibility with older advertisements that lack
+  a `SeqNum` field. An advertisement chain, whose advertisements do not yes have a `SeqNum`, can
+  start adding advertisements with a `SeqNum` at any time, but must continue including an increasing
+  `SeqNum` field in advertisements onward. The maximum value for `SeqNum` is 2<sup>53</sup>-1.
 * **`ExtendedProvider`** is an optional field; if specified, indexers which understand
   the `ExtendedProvider` extension should ignore the `Provider`, `Addresses`, and `Metadata`
   specified in the advertisement in favor of those specified in the `ExtendedProvider`. The values
@@ -299,6 +306,17 @@ Specified protocols are expected to be ordered in increasing order.
     * the following bytes are not yet defined.
 
 If the `Metadata` field is not specified, the advertisement is treated as address update only.
+
+#### SeqNum
+
+The sequence number field is optional only for backwards compatibility. It should be included as soon as possible by both new and existing index providers to enable indexer functionality that uses it. Once included in an advertisement, all following advertisements must have a `SeqNum`. `SeqNum` is used for the calculation of chain distance between different advertisements. Delaying the includion of `SeqNum` will result in some indexer functionality being unavailable.
+
+Indexers are not required to validate that `SeqNum` is monotonically increasing, but an incorrect sequence number may result in incorrect indexing information for that chain's provider. An indexer can choose not index advertisement chains that do not have a monotonically increasing `SeqNum`.
+
+A `SeqNum` value higher then the maximum of 2<sup>53</sup>-1 (9007199254740992) values will not be recognized and instead seen as 0. It is not expected for any chain to reach this
+  sequence as that would mean it has over nine quintillion advertisements. If this were reached, then `SeqNum` should be reset to 0, which may result in an inaccurate distance calculations between advertisements spanning the reset.
+
+If `SeqNum` is present then it is included in the data that the advertisement signature is calculated over.
 
 #### ExtendedProvider
 

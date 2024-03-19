@@ -202,7 +202,7 @@ Worst case scenario, when both `ProviderRecord`s and `Metadata`s need to be fetc
 * **Extra compute**. At minimum, Clients must perform an extra hash computation per CID and decryption per `ProviderRecordKey` that will add
 some overhead to each lookup. 
 
-* **Extra storage space**. Storing encrypted data will require more space due to padding and nonce;
+* **Extra storage space**. Storing encrypted data will require more space due to padding, nonce, and the addition of an encrypted provider key per multihash;
 
 * **Bulk deletes**. Encrypted `PeerID` will be different for each multihash and hence bulk delete operations (delete everything for a provider X) will not be possible. Such deletion will require a garbage collection mechanism that rereads deleted advertisements and deletes the HASH2 for all multihashes.
 

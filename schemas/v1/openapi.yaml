@@ -51,7 +51,7 @@ paths:
       parameters:
         - name: multihash
           in: path
-          description: The base58 string representation of the multihash.
+          description: The base58 or hex string representation of the multihash.
           required: true
         - $ref: '#/components/parameters/Cascade'
       responses:

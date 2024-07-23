@@ -116,7 +116,7 @@ As a special case, the following content types are interpreted as their IPLD equ
 * `application/cbor` is considered to be the same as `application/vnd.ipld.dag-cbor`.
 
 The common data types, such as `CID` and `Multihash`, are encoded in their
-standard [multibase format](https://github.com/multiformats/multibase) when referenced in URLs.
+standard [multibase format](https://github.com/multiformats/multibase) when referenced in URLs. While publishers SHOULD prefer CIDV1 encodings of resources, the client MUST request resources using the same cid encoding as es encoded within a publisher resource.
 
 ### Versioning
 
@@ -144,6 +144,12 @@ Custom paths in addresses specified as Multiaddr is not currently supported. See
 * https://github.com/libp2p/specs/pull/550
 
 ## Specification
+
+### HTTP Semantics
+
+The HTTP client used by IPNI indexers fetching resources from an HTTP Publisher in this protocol MUST support a number of optional HTTP extensions in order to support efficiency of the provider. These extensions that can be assumed to be supported by clients are:
+* Support for `Accept-Encoding: gzip` transport compression.
+* Support for `ETag` / `If-None-Match` caching of the head resource.
 
 ### GET `/ipni/v1/ad/head`
 

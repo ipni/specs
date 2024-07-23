@@ -116,7 +116,7 @@ As a special case, the following content types are interpreted as their IPLD equ
 * `application/cbor` is considered to be the same as `application/vnd.ipld.dag-cbor`.
 
 The common data types, such as `CID` and `Multihash`, are encoded in their
-standard [multibase format](https://github.com/multiformats/multibase) when referenced in URLs. While publishers SHOULD prefer CIDV1 encodings of resources, the client MUST request resources using the same cid encoding as es encoded within a publisher resource.
+standard [multibase format](https://github.com/multiformats/multibase) when referenced in URLs. While publishers SHOULD prefer CIDv1 encodings of resources, the client MUST request resources using the same cid encoding as is encoded within a publisher resource.
 
 ### Versioning
 

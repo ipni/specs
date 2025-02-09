@@ -86,7 +86,7 @@ its design, the deterministic sampling algorithms employed, and the API endpoint
 
 ### Rationale
 
-Two key rationale for the **IPNI Multihash Sampling** API are:
+The key rationales for the **IPNI Multihash Sampling** API are:
 
 1. **Efficient Data Sampling**: Traditional data sampling methods often require exhaustive scans of entire datasets,
    leading to high resource consumption and latency. The API provides a more efficient alternative by enabling direct

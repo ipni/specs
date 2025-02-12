@@ -168,6 +168,7 @@ Samples a set of multihashes ingested by an IPNI indexer for a given provider ID
 - **Query Parameters**:
     - `beacon`: (string, optional) The hex encoded randomness beacon for deterministic sampling. Ensures repeatability
       of samples. Must not exceed 32 bytes.
+      - Example: `3439d92d58e47d342131d446a3abe264396dd264717897af30525c98408c834f` 
     - `max`: (integer, optional) The maximum number of multihashes to return. Defaults to one if unspecified. Must be
       greater than zero, with a maximum of 10.
     - `federation_epoch`: (optional) The IPNI federation epoch, currently only accepting zero, pending review of IPNI

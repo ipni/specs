@@ -101,7 +101,7 @@ The key rationales for the **IPNI Multihash Sampling** API are:
 
 ### Determinism and Consistency
 
-The **IPNI Multihash Sampling** uses deterministic algorithms with a uniform seed to produce consistent, repeatable
+The **IPNI Multihash Sampling** uses deterministic algorithms with a uniform beacon to produce consistent, repeatable
 sampling sequences. This reduces sampling bias and ensures the same results for repeated queries. Key components
 include:
 
@@ -112,21 +112,33 @@ include:
 * **Federation Epoch Awareness**: The API maintains consistent multihash sampling across indexer instances within the
   same federation by considering the federation epoch.
 
-* **Seed-Based Sampling**: Users can specify a seed derived from decentralized randomness beacons like Drand. This
-  guarantees deterministic sampling and just-in-time candidate selection. Queries repeated with the same seed produce
+* **Seed-Based Sampling**: Users can specify a beacon derived from decentralized randomness beacons like Drand. This
+  guarantees deterministic sampling and just-in-time candidate selection. Queries repeated with the same beacon produce
   identical results, facilitating reproducibility.
 
-The sampling process utilizes the PCG (Permuted Congruential Generator) random number generator, seeded to ensure
-deterministic output. To efficiently perform sampling, two pre-emptive data organizational strategies are proposed:
+The sampling process employs the PCG (Permuted Congruential Generator) random number generator, using a seed derived
+from a beacon to ensure deterministic output. The 128-bit PCG seed is extracted from a 32-byte beacon through the
+following steps:
+
+- The 32-byte beacon is split into two 16-byte segments.
+- The least significant bytes of each 16-byte segment are used to form the high and low 64-bit seed values,
+  respectively.
+
+If the provided beacon is smaller than 32 bytes, it is padded with zeros to reach the required seed size. The use of a
+32-byte beacon, even though half might be discarded, is driven by the convenience of aligning with existing distributed
+randomness beacons like DRAND, which often provide larger outputs, and allows for future extensibility by reserving
+additional space for potential enhancements or increased complexity in random seed generation.
+
+To efficiently perform sampling, two pre-emptive data organizational strategies are proposed:
 
 1. **Counting Multihashes per Context ID**: Indexers pre-calculate the total multihash count per provider ID for each
    context ID.
 2. **Sorting Multihashes by Hash Value**: Indexers store multihash records grouped by provider ID and context ID, sorted
    by hash value. This complements a global multihash index linked to provider information.
 
-The sampling process involves initializing the PCG with the seed and selecting the required indices with the upper bound
-being the total multihashes per context ID. The selected multihashes are then retrieved from the sorted list by hash
-value.
+The sampling process involves initializing the PCG with the beacon and selecting the required indices with the upper
+bound being the total multihashes per context ID. The selected multihashes are then retrieved from the sorted list by
+hash value.
 
 While other deterministic sampling algorithms don't require these pre-emptive data organizational strategies, the
 proposed method is more efficient for large datasets. It also supports efficient bulk deletions and deeper meta-analysis
@@ -150,11 +162,14 @@ Samples a set of multihashes ingested by an IPNI indexer for a given provider ID
 - **Path Parameters**:
     - `provider-id`: (string, required) The multibase encoded peer ID of the provider.
         - Example: `12D3KooWN34sqTaMfZE3ReELyVF3no3qU7883Mi6j2VWsv6dwhPL`
-    - `context-id`: (string, required) The multibase encoded context ID.
+    - `context-id`: (string, required) The base64 encoded context ID.
+        - Example: `AXESIFVcxmAvWdc3BbQUKlYcp2Z2DuO2w5Fo4jmIC8IbMX00`
 
 - **Query Parameters**:
-    - `seed`: (optional) The seed for deterministic sampling. Ensures repeatability of samples.
-    - `max`: (optional) The maximum number of multihashes to return. Defaults to one if unspecified.
+    - `beacon`: (string, optional) The hex encoded randomness beacon for deterministic sampling. Ensures repeatability
+      of samples. Must not exceed 32 bytes.
+    - `max`: (integer, optional) The maximum number of multihashes to return. Defaults to one if unspecified. Must be
+      greater than zero, with a maximum of 10.
     - `federation_epoch`: (optional) The IPNI federation epoch, currently only accepting zero, pending review of IPNI
       federation protocol.
 

@@ -117,17 +117,19 @@ include:
   identical results, facilitating reproducibility.
 
 The sampling process employs the PCG (Permuted Congruential Generator) random number generator, using a seed derived
-from a beacon to ensure deterministic output. The 128-bit PCG seed is extracted from a 32-byte beacon through the
-following steps:
+from a beacon to ensure deterministic output. The 128-bit PCG seed is extracted from up to a 32-byte beacon through the
+following refined steps:
 
-- The 32-byte beacon is split into two 16-byte segments.
-- The least significant bytes of each 16-byte segment are used to form the high and low 64-bit seed values,
+- The 32-byte beacon is divided into two 16-byte halves.
+- From each 16-byte half, the least significant 16 bytes are used to form the high and low 64-bit seed values,
   respectively.
 
-If the provided beacon is smaller than 32 bytes, it is padded with zeros to reach the required seed size. The use of a
-32-byte beacon, even though half might be discarded, is driven by the convenience of aligning with existing distributed
-randomness beacons like DRAND, which often provide larger outputs, and allows for future extensibility by reserving
-additional space for potential enhancements or increased complexity in random seed generation.
+If the provided beacon is shorter than 32 bytes, it is first divided into two parts and padded with zeros as needed to
+ensure each part is 16 bytes long. Beacons with an odd number of bytes are padded to the closest even byte count before
+being split in half. The use of a 32-byte beacon, even though half might be discarded, is driven by the convenience of
+aligning with existing distributed randomness beacons like DRAND, which often provide larger outputs, and allows for
+future extensibility by reserving additional space for potential enhancements or increased complexity in random seed
+generation.
 
 To efficiently perform sampling, two pre-emptive data organizational strategies are proposed:
 
@@ -167,8 +169,8 @@ Samples a set of multihashes ingested by an IPNI indexer for a given provider ID
 
 - **Query Parameters**:
     - `beacon`: (string, optional) The hex encoded randomness beacon for deterministic sampling. Ensures repeatability
-      of samples. Must not exceed 32 bytes.
-      - Example: `3439d92d58e47d342131d446a3abe264396dd264717897af30525c98408c834f` 
+      of samples. _Must not exceed 32 bytes_.
+        - Example: `3439d92d58e47d342131d446a3abe264396dd264717897af30525c98408c834f`
     - `max`: (integer, optional) The maximum number of multihashes to return. Defaults to one if unspecified. Must be
       greater than zero, with a maximum of 10.
     - `federation_epoch`: (optional) The IPNI federation epoch, currently only accepting zero, pending review of IPNI

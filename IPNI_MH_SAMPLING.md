@@ -177,7 +177,7 @@ Samples a set of multihashes ingested by an IPNI indexer for a given provider ID
       federation protocol.
 
 - **Response**:
-    - `200 OK`: A list of sampled multihash objects, each containing information based on the input parameters.
+    - `200 OK`: A list of sampled multihash objects, each containing information based on the input parameters. The multihash values are encoded using the Base58 string representation.
     - `404 Not Found`: If the provider ID or context ID does not exist.
     - `400 Bad Request`: If the request parameters are invalid.
 

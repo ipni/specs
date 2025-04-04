@@ -297,6 +297,12 @@ Specified protocols are expected to be ordered in increasing order.
 * HTTP
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.
+* Named Record
+    * Protocol `uvarint` is <TBD> in the multicodec table
+    * the following bytes should be:
+        * `uvarint` of the number of bytes in the name followed by the Name in bytes.
+            * Name should be a UTF-8 string
+        * `uvarint` of the number of bytes in the record followed by the Record bytes
 
 If the `Metadata` field is not specified, the advertisement is treated as address update only.
 

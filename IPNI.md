@@ -275,7 +275,7 @@ simply set to `true`.
 
 The reference provider currently supports Bitswap and Filecoin protocols. The structure of the
 metadata format for these protocols is defined
-in [the library](https://github.com/filecoin-project/index-provider/tree/main/metadata).
+in [the library](https://github.com/ipni/go-libipni/blob/main/metadata).
 
 The network indexer nodes expect that metadata begins with a `uvarint` identifying the protocol,
 followed by protocol-specific metadata. This may be repeated for additional supported protocols.
@@ -283,17 +283,27 @@ Specified protocols are expected to be ordered in increasing order.
 
 * Bitswap
     * `uvarint`
-      protocol `0x0900` ([`transport-bitswap`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L147)
+      protocol `0x0900` ([`transport-bitswap`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L147)
       in the multicodec table).
     * no following metadata.
 * Filecoin Graphsync
     * `uvarint`
-      protocol `0x0910`  ([`transport-graphsync-filecoinv1`](https://github.com/multiformats/multicodec/blob/f099a91820b36bed6b90d0632a9f5ff386a2d425/table.csv#L148)
+      protocol `0x0910` ([`transport-graphsync-filecoinv1`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L148)
       in the multicodec table).
     * the following bytes should be a cbor encoded struct of:
         * PieceCID, a link
         * VerifiedDeal, boolean
         * FastRetrieval, boolean
+* HTTP IPFS Trustless Gateway
+   * `uvarint`
+     protocol `0x0920` ([`transport-filecoin-piece-http`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L151)
+     in the multicodec table).
+    * no following metadata.
+* HTTP Filecoin Piece
+   * `uvarint`
+     protocol `0x0930` ([`transport-filecoin-piece-http`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L152)
+     in the multicodec table).
+    * no following metadata.
 * HTTP
     * the proposed `uvarint` protocol is `0x3D0000`.
     * the following bytes are not yet defined.

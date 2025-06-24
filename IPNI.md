@@ -296,7 +296,7 @@ Specified protocols are expected to be ordered in increasing order.
         * FastRetrieval, boolean
 * HTTP IPFS Trustless Gateway
    * `uvarint`
-     protocol `0x0920` ([`transport-ipfs-gateway-http	`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L151)
+     protocol `0x0920` ([`transport-ipfs-gateway-http`](https://github.com/multiformats/multicodec/blob/8790c214e60330f7515b84653bf7dbcc2785b5cc/table.csv#L151)
      in the multicodec table).
     * no following metadata.
 * HTTP Filecoin Piece

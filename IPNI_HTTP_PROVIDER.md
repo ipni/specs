@@ -139,7 +139,9 @@ For example, if the announced URL is `https://ipni-provider.example`, it will be
 
 #### Custom Paths in Multiaddr
 
-Custom paths in addresses specified as Multiaddr is not currently supported. See related issues below:
+Custom paths in addresses specified as Multiaddr is supported through the `http-path` parameter. For example, head advertisement for a Multiaddr `/dns/provider.example.com/tcp/443/tls/http/http-path/sub%2Fpath` will be queried through the following url: `https://provider.example.com/sub/path/ipni/v1/ad/head`.
+
+See related issues below for more information:
 * https://github.com/ipni/go-libipni/issues/42
 * https://github.com/libp2p/specs/pull/550
 

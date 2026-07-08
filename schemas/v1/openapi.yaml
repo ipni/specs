@@ -12,6 +12,8 @@ paths:
           in: path
           description: The string representation of the CID.
           required: true
+          schema:
+            type: string
         - $ref: '#/components/parameters/Cascade'
       responses:
         '200':
@@ -43,7 +45,7 @@ paths:
     options:
       description: Returns permitted communication options for lookup by CID.
       responses:
-        204:
+        '204':
           $ref: '#/components/responses/FindOptions'
   /multihash/{multihash}:
     get:
@@ -53,6 +55,8 @@ paths:
           in: path
           description: The base58 or hex string representation of the multihash.
           required: true
+          schema:
+            type: string
         - $ref: '#/components/parameters/Cascade'
       responses:
         '200':
@@ -84,7 +88,7 @@ paths:
     options:
       description: Returns permitted communication options for lookup by multihash.
       responses:
-        204:
+        '204':
           $ref: '#/components/responses/FindOptions'
     post:
       description: Batch finds provider records for a given set of multihashes
@@ -113,6 +117,51 @@ paths:
           description: No results were found for any of the given multihashs.
         '500':
           description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+  /sync/status:
+    get:
+      description: Lists live sync status for all publishers currently tracked by the indexer.
+      responses:
+        '200':
+          description: Sync status was found for at least one publisher.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/SyncStatusMap'
+              examples:
+                syncStatuses:
+                  $ref: '#/components/examples/SyncStatusMapResponse'
+        '204':
+          description: No sync status is currently tracked for any publisher.
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+  /sync/status/{peerID}:
+    get:
+      description: Returns the live sync status for a single publisher, identified by its libp2p peer ID.
+      parameters:
+        - name: peerID
+          in: path
+          description: The string representation of the publisher's libp2p peer ID.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sync status was found for the given publisher.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/SyncStatus'
+              examples:
+                syncStatus:
+                  $ref: '#/components/examples/SyncStatusResponse'
+        '204':
+          description: No sync status is currently tracked for the given publisher.
+        '400':
+          description: The given peer ID could not be decoded.
           content:
             text/plain: { }
 components:
@@ -162,6 +211,152 @@ components:
           items:
             type: string
             description: base64 string representation of the multihash.
+    SyncStatusMap:
+      type: object
+      description: |
+        Sync statuses keyed by publisher peer ID; each value is the sync status
+        for that publisher.
+      additionalProperties:
+        $ref: '#/components/schemas/SyncStatus'
+    SyncStatus:
+      type: object
+      description: |
+        Live sync progress for a single publisher. Reflects one main provider
+        (the advertisement's Provider) at a time; extended providers are not
+        tracked. Each phase carries a current run while active and a bounded
+        history of recent completed runs, at most ten per phase. Fields are
+        omitted when empty.
+      properties:
+        Provider:
+          type: string
+          description: Encoded libp2p peer ID of the main provider for the tracked advertisements.
+        Scan:
+          $ref: '#/components/schemas/SyncScanRun'
+        ScanHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncScanRun'
+        Processing:
+          $ref: '#/components/schemas/SyncProcessingRun'
+        ProcessingHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncProcessingRun'
+        Download:
+          $ref: '#/components/schemas/SyncDownloadRun'
+        DownloadHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncDownloadRun'
+    SyncScanRun:
+      type: object
+      description: Progress of a single advertisement-chain scan.
+      properties:
+        StartTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which the scan started.
+        EndTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which the scan ended; omitted while the scan is ongoing.
+        Ongoing:
+          type: boolean
+          description: True while the scan is in progress; omitted once it has completed.
+        Elapsed:
+          type: string
+          description: Duration string; time elapsed so far if ongoing, or total duration if completed, for example "15s".
+        Error:
+          type: string
+          description: Error message if the scan ended in failure.
+        AdsScanned:
+          type: integer
+          description: Number of advertisements walked during the chain scan.
+        HeadAd:
+          type: string
+          description: String CID of the head advertisement at which the scan began.
+        CurrentAd:
+          type: string
+          description: String CID of the advertisement most recently walked.
+    SyncProcessingRun:
+      type: object
+      description: Progress of processing a synced advertisement stack.
+      properties:
+        StartTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which processing started.
+        EndTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which processing ended; omitted while processing is ongoing.
+        Ongoing:
+          type: boolean
+          description: True while processing is in progress; omitted once it has completed.
+        Elapsed:
+          type: string
+          description: Duration string; time elapsed so far if ongoing, or total duration if completed.
+        Error:
+          type: string
+          description: Error message if processing ended in failure.
+        AdsProcessed:
+          type: integer
+          description: Number of advertisements processed so far, including the one currently in progress.
+        AdsTotal:
+          type: integer
+          description: Total number of advertisements to process in this run.
+        AdsLeft:
+          type: integer
+          description: Advertisements remaining; present only while AdsProcessed is less than AdsTotal.
+        CurrentAd:
+          type: string
+          description: String CID of the advertisement currently being processed.
+        ErrorCount:
+          type: integer
+          description: Number of advertisements that failed to ingest during this run.
+    SyncDownloadRun:
+      type: object
+      description: |
+        Progress of downloading advertisement entry data. One download run is
+        shared across all advertisements processed within a single processing
+        run, so its counts accumulate over the whole stack.
+      properties:
+        StartTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which the download run started.
+        EndTime:
+          type: string
+          format: date-time
+          description: RFC3339 time at which the download run ended; omitted while the run is ongoing.
+        Ongoing:
+          type: boolean
+          description: True while the download run is in progress; omitted once it has completed.
+        Elapsed:
+          type: string
+          description: Duration string; time elapsed so far if ongoing, or total duration if completed.
+        Error:
+          type: string
+          description: Error message if the download run ended in failure.
+        BytesDownloaded:
+          type: integer
+          format: int64
+          description: Total downloaded entry-block bytes.
+        EntryChunkCount:
+          type: integer
+          description: Number of EntryChunk blocks indexed; HAMT entries are not chunked and do not contribute.
+        ChunkMultihashCount:
+          type: integer
+          format: int64
+          description: Multihashes indexed from EntryChunk blocks.
+        HamtMultihashCount:
+          type: integer
+          format: int64
+          description: Multihashes indexed from HAMT entries.
+        MultihashCount:
+          type: integer
+          format: int64
+          description: Total multihashes indexed; the sum of ChunkMultihashCount and HamtMultihashCount.
   examples:
     NDJsonProviderRecords:
       summary: Streaming provider records response
@@ -247,6 +442,89 @@ components:
               ]
             }
           ]
+        }
+    SyncStatusResponse:
+      summary: Sync status for a single publisher, mid-sync with a prior scan in history
+      value: |
+        {
+          "Provider": "12D3KooWHVXoJnv2ifmr9K6LWwJPXxkfvzZRHzjiTZMvybeTnwPy",
+          "Processing": {
+            "StartTime": "2026-06-30T15:04:05Z",
+            "Ongoing": true,
+            "Elapsed": "45s",
+            "AdsProcessed": 12,
+            "AdsTotal": 40,
+            "AdsLeft": 28,
+            "CurrentAd": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq"
+          },
+          "Download": {
+            "StartTime": "2026-06-30T15:04:06Z",
+            "Ongoing": true,
+            "Elapsed": "44s",
+            "BytesDownloaded": 10485760,
+            "EntryChunkCount": 130,
+            "ChunkMultihashCount": 260000,
+            "MultihashCount": 260000
+          },
+          "ScanHistory": [
+            {
+              "StartTime": "2026-06-30T15:03:50Z",
+              "EndTime": "2026-06-30T15:04:05Z",
+              "Elapsed": "15s",
+              "AdsScanned": 40,
+              "HeadAd": "baguqeerab3lqvj7yq7hbq6xw2b5xkq6vqz6xjz4x5x3n2m7k4qz5xq5x3n2a",
+              "CurrentAd": "baguqeeranv6xq2z5x3n2m7k4qz5xq5x3n2m7k4qz5xq5x3n2m7k4qz5xq5xa"
+            }
+          ]
+        }
+    SyncStatusMapResponse:
+      summary: Sync statuses for multiple publishers, keyed by peer ID
+      value: |
+        {
+          "12D3KooWHVXoJnv2ifmr9K6LWwJPXxkfvzZRHzjiTZMvybeTnwPy": {
+            "Provider": "12D3KooWHVXoJnv2ifmr9K6LWwJPXxkfvzZRHzjiTZMvybeTnwPy",
+            "Processing": {
+              "StartTime": "2026-06-30T15:04:05Z",
+              "Ongoing": true,
+              "Elapsed": "45s",
+              "AdsProcessed": 12,
+              "AdsTotal": 40,
+              "AdsLeft": 28,
+              "CurrentAd": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq"
+            },
+            "Download": {
+              "StartTime": "2026-06-30T15:04:06Z",
+              "Ongoing": true,
+              "Elapsed": "44s",
+              "BytesDownloaded": 10485760,
+              "EntryChunkCount": 130,
+              "ChunkMultihashCount": 260000,
+              "MultihashCount": 260000
+            }
+          },
+          "12D3KooWDpp7U7W9Q8feMZPPEpPP5FKXTUakLgnVLbavfjb9mzrT": {
+            "Provider": "12D3KooWDpp7U7W9Q8feMZPPEpPP5FKXTUakLgnVLbavfjb9mzrT",
+            "ProcessingHistory": [
+              {
+                "StartTime": "2026-06-30T14:58:01Z",
+                "EndTime": "2026-06-30T15:00:04Z",
+                "Elapsed": "2m3s",
+                "AdsProcessed": 8,
+                "AdsTotal": 8
+              }
+            ],
+            "DownloadHistory": [
+              {
+                "StartTime": "2026-06-30T14:58:02Z",
+                "EndTime": "2026-06-30T15:00:03Z",
+                "Elapsed": "2m1s",
+                "BytesDownloaded": 2097152,
+                "EntryChunkCount": 24,
+                "ChunkMultihashCount": 48000,
+                "MultihashCount": 48000
+              }
+            ]
+          }
         }
   parameters:
     Cascade:

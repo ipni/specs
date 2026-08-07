@@ -164,6 +164,34 @@ paths:
           description: The given peer ID could not be decoded.
           content:
             text/plain: { }
+  /sync/status/ad/{cid}:
+    get:
+      description: Reports whether the content of a single advertisement is available from this indexer.
+      parameters:
+        - name: cid
+          in: path
+          description: The string representation of the advertisement CID.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The advertisement status was determined.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AdStatus'
+              examples:
+                adStatus:
+                  $ref: '#/components/examples/AdStatusResponse'
+        '400':
+          description: The given CID could not be decoded.
+          content:
+            text/plain: { }
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
 components:
   schemas:
     FindResponse:
@@ -357,6 +385,23 @@ components:
           type: integer
           format: int64
           description: Total multihashes indexed; the sum of ChunkMultihashCount and HamtMultihashCount.
+    AdStatus:
+      type: object
+      description: |
+        Availability of a single advertisement's content from this indexer.
+        Timestamps and provider identity are not stored per advertisement and
+        are not returned.
+      properties:
+        Ad:
+          type: string
+          description: String CID of the requested advertisement.
+        Indexed:
+          type: boolean
+          description: |
+            True only when the advertisement was fully processed while the
+            indexer was configured to store its entries. Advertisements that
+            were skipped, are still in progress, failed, or have never been
+            seen report false.
   examples:
     NDJsonProviderRecords:
       summary: Streaming provider records response
@@ -525,6 +570,13 @@ components:
               }
             ]
           }
+        }
+    AdStatusResponse:
+      summary: Advertisement whose content is available from this indexer
+      value: |
+        {
+          "Ad": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq",
+          "Indexed": true
         }
   parameters:
     Cascade:

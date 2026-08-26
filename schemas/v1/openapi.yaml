@@ -164,6 +164,101 @@ paths:
           description: The given peer ID could not be decoded.
           content:
             text/plain: { }
+  /sync/status/ad:
+    post:
+      description: |
+        Looks up several advertisements at once and reports whether each one's
+        content is available from this indexer.
+
+        Send 1 to 128 advertisement CIDs. Results are returned in the same
+        order as `Ads`. Duplicates are allowed; each position gets its own
+        result.
+
+        If one CID in the list is invalid, that entry includes an `Error` and
+        the rest of the response is still returned with HTTP 200. Prefer
+        `GET /sync/status/ad/{cid}` when checking a single advertisement; that
+        response can be cached.
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/BatchAdStatusRequest'
+            examples:
+              ads:
+                $ref: '#/components/examples/JsonBatchAdStatusRequest'
+      responses:
+        '200':
+          description: |
+            A status was produced for every requested CID, in request order.
+            HTTP 200 is returned even when some entries have an `Error`.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/BatchAdStatusResponse'
+              examples:
+                statuses:
+                  $ref: '#/components/examples/JsonBatchAdStatusResponse'
+        '400':
+          description: |
+            The request is not valid: `Ads` is missing or empty, more than 128
+            CIDs were sent, the body is too large, or the JSON could not be
+            parsed.
+          content:
+            text/plain: { }
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+        '503':
+          description: Advertisement status is temporarily unavailable.
+          content:
+            text/plain: { }
+  /sync/status/ad/{cid}:
+    get:
+      description: |
+        Looks up a single advertisement by CID and reports whether its content
+        is available from this indexer.
+
+        Use an advertisement CID (dag-json or dag-cbor). To find providers for
+        content, use `GET /cid/{cid}` instead.
+      parameters:
+        - name: cid
+          in: path
+          description: |
+            Advertisement CID. Must use the dag-json or dag-cbor codec.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: |
+            The advertisement was looked up. An advertisement this indexer has
+            never seen still returns 200, with `Indexed` false and `State`
+            `"unknown"`.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AdStatus'
+              examples:
+                indexed:
+                  $ref: '#/components/examples/AdStatusResponse'
+                skipped:
+                  $ref: '#/components/examples/AdStatusSkippedResponse'
+        '400':
+          description: |
+            The CID could not be decoded, or it is not an advertisement CID
+            (dag-json or dag-cbor).
+          content:
+            text/plain: { }
+        '500':
+          description: Failure occurred while processing the request.
+          content:
+            text/plain: { }
+        '503':
+          description: Advertisement status is temporarily unavailable.
+          content:
+            text/plain: { }
 components:
   schemas:
     FindResponse:
@@ -357,6 +452,109 @@ components:
           type: integer
           format: int64
           description: Total multihashes indexed; the sum of ChunkMultihashCount and HamtMultihashCount.
+    AdStatus:
+      type: object
+      description: |
+        Status of one advertisement: whether its content is available from
+        this indexer, and if not, why. The provider of the advertisement is
+        not included.
+
+        In a batch response, an invalid CID produces an `Error` on that entry.
+        Ignore the other fields on that entry.
+      required:
+        - Ad
+        - Indexed
+        - Frozen
+      properties:
+        Ad:
+          type: string
+          description: |
+            The advertisement CID that was requested. If a batch item could
+            not be decoded, this is the original string from the request.
+        Indexed:
+          type: boolean
+          description: |
+            True if this indexer can serve find results for the content in
+            this advertisement. False if the advertisement is unknown, still
+            being processed, was skipped, is being reprocessed, or was
+            recorded without adding its content to the index.
+        IndexedTime:
+          type: string
+          format: date-time
+          description: |
+            When this advertisement's content was last indexed, as UTC
+            RFC3339 with microsecond precision. Omitted when `Indexed` is
+            false, or when the indexer has no timestamp for it.
+        State:
+          type: string
+          description: |
+            What happened to this advertisement. Omitted when `Error` is set.
+
+            * `unknown` — this indexer has not seen the advertisement.
+            * `pending` — the advertisement is known but not finished yet.
+            * `indexed` — processing finished. Check `Indexed` to see whether
+              the content is actually available; it is not available when
+              `Frozen` is true.
+            * `skipped` — the advertisement was rejected and will not be
+              indexed (for example, it was malformed).
+            * `resyncing` — the advertisement is being processed again;
+              previous results should not be relied on until it finishes.
+          enum:
+            - unknown
+            - pending
+            - indexed
+            - skipped
+            - resyncing
+        SkipReason:
+          type: string
+          description: |
+            Why the advertisement was skipped. Present only when `State` is
+            `skipped`.
+        SkippedTime:
+          type: string
+          format: date-time
+          description: |
+            When this advertisement was last skipped, as UTC RFC3339 with
+            microsecond precision. Present only when `State` is `skipped` and
+            the indexer has a timestamp for it.
+        Frozen:
+          type: boolean
+          description: |
+            True if the advertisement was recorded without adding its content
+            to the index (for example, the indexer was not accepting new
+            index data at the time). When `Frozen` is true, `Indexed` is
+            false even if `State` is `indexed`.
+        Error:
+          type: string
+          description: |
+            Why this batch item could not be looked up, for example because
+            the value is not a valid advertisement CID. Present only in batch
+            responses. When set, ignore the other status fields on this entry.
+    BatchAdStatusRequest:
+      type: object
+      required:
+        - Ads
+      properties:
+        Ads:
+          type: array
+          minItems: 1
+          maxItems: 128
+          description: |
+            Advertisement CIDs to look up. Results are returned in this order.
+            The same CID may appear more than once.
+          items:
+            type: string
+            description: An advertisement CID (dag-json or dag-cbor).
+    BatchAdStatusResponse:
+      type: object
+      required:
+        - Statuses
+      properties:
+        Statuses:
+          type: array
+          description: One status per requested CID, in the same order as `Ads`.
+          items:
+            $ref: '#/components/schemas/AdStatus'
   examples:
     NDJsonProviderRecords:
       summary: Streaming provider records response
@@ -525,6 +723,56 @@ components:
               }
             ]
           }
+        }
+    AdStatusResponse:
+      summary: Advertisement whose content is available from this indexer
+      value: |
+        {
+          "Ad": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq",
+          "Indexed": true,
+          "IndexedTime": "2026-06-15T12:30:45.123456Z",
+          "State": "indexed",
+          "Frozen": false
+        }
+    AdStatusSkippedResponse:
+      summary: Advertisement that was permanently skipped
+      value: |
+        {
+          "Ad": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq",
+          "Indexed": false,
+          "State": "skipped",
+          "SkipReason": "decodeErr",
+          "SkippedTime": "2026-06-15T12:30:45.123456Z",
+          "Frozen": false
+        }
+    JsonBatchAdStatusRequest:
+      summary: Batch advertisement status request
+      value: |
+        {
+          "Ads": [
+            "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq",
+            "not-a-cid"
+          ]
+        }
+    JsonBatchAdStatusResponse:
+      summary: Batch advertisement status with one indexed ad and one per-item error
+      value: |
+        {
+          "Statuses": [
+            {
+              "Ad": "baguqeerakziw4pilnfeydam57egdqe4qf4xo5nfljdnzzl3jutarmmimtsjq",
+              "Indexed": true,
+              "IndexedTime": "2026-06-15T12:30:45.123456Z",
+              "State": "indexed",
+              "Frozen": false
+            },
+            {
+              "Ad": "not-a-cid",
+              "Indexed": false,
+              "Frozen": false,
+              "Error": "cannot decode advertisement cid"
+            }
+          ]
         }
   parameters:
     Cascade:

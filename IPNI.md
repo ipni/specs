@@ -43,6 +43,7 @@ retrieval address and protocol.
         + [Entries](#entries)
             - [`EntryChunk` Chain](#entrychunk-chain)
             - [HAMT](#hamt)
+            - [Identity CIDs](#identity-cids)
         + [Metadata](#metadata)
         + [ExtendedProvider](#extendedprovider)
     * [Advertisement Transfer](#advertisement-transfer)
@@ -270,6 +271,29 @@ is [used as a set](https://ipld.io/specs/advanced-data-layouts/hamt/spec/#use-as
 the list of multihashes being advertised.
 This is where the keys in the HAMT represent the multihashes being advertised, and the values are
 simply set to `true`.
+
+##### Identity CIDs
+
+A link in the entries data may be an identity CID (multihash code `0x00`), whose digest is the
+encoded block itself. This applies to the advertisement's `Entries` link, to the `Next` link of an
+`EntryChunk`, and to the links of a HAMT. A small advertisement, for example one with a single
+multihash, can then embed its entries in the `Entries` link, and the publisher has no separate block
+to store or serve.
+
+The digest of an identity CID must not be larger than 128 bytes, the default limit of
+[boxo's `verifcid`](https://pkg.go.dev/github.com/ipfs/boxo/verifcid). Larger data must be linked by
+a hashed CID. Indexers take the block of an identity CID from the CID and do not request it from
+the publisher. An indexer treats an advertisement whose entries link to a larger identity CID as
+malformed and skips it.
+
+As a guide to what fits: an `EntryChunk` with no `Next` link holds one sha2-256 multihash within
+128 bytes in dag-json, or up to three in dag-cbor.
+
+The limit applies to every link an indexer follows, including `PreviousID`. A signed advertisement
+is larger than 128 bytes, so an advertisement cannot be linked by an identity CID.
+
+Publishers that serve blocks over HTTP should still answer requests for identity CIDs, for indexers
+that request them; see the [IPNI HTTP Provider Specification](IPNI_HTTP_PROVIDER.md#get-ipniv1adcid).
 
 #### Metadata
 

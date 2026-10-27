@@ -44,6 +44,7 @@ opportunities to make the transport mechanism swappable.
         - [Response](#response)
         - [Example](#example)
     - [GET `/ipni/v1/ad/{CID}`](#get-ipniv1adcid)
+        - [Identity CIDs](#identity-cids)
         - [Response](#response-1)
         - [Example](#example-1)
 - [Security](#security)
@@ -236,6 +237,10 @@ Cache-Control: public, max-age=29030400, immutable
 ```
 
 By setting this response header, it instructs client-side caches and intermediate proxies to store the response for a long duration (`max-age=29030400`), as well as treat it as immutable. This helps improve performance and ensures that the same content is served consistently for the specified `CID`.
+
+#### Identity CIDs
+
+The block of an identity CID (multihash code `0x00`) is the CID's digest, so indexers take it from the CID and do not need to request it (see [IPNI Specification/Identity CIDs](IPNI.md#identity-cids)). A publisher SHOULD still answer a request for an identity CID, for indexers that request every link: it SHOULD respond with the digest as is, in the CID's own codec, so that the response body matches the CID. The publisher does not need to store the block to do so. A publisher SHOULD respond `404 Not Found` for an identity CID whose digest is larger than 128 bytes, because indexers refuse such a CID.
 
 ### Response
 

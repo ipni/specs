@@ -280,20 +280,28 @@ encoded block itself. This applies to the advertisement's `Entries` link, to the
 multihash, can then embed its entries in the `Entries` link, and the publisher has no separate block
 to store or serve.
 
+This section is about links. A multihash listed in an `EntryChunk`'s `Entries`, or as a HAMT key, is
+an advertised multihash, not a link, and this section does not apply to it.
+
 The digest of an identity CID must not be larger than 128 bytes, the default limit of
 [boxo's `verifcid`](https://pkg.go.dev/github.com/ipfs/boxo/verifcid). Larger data must be linked by
-a hashed CID. Indexers take the block of an identity CID from the CID and do not request it from
-the publisher. An indexer treats an advertisement whose entries link to a larger identity CID as
-malformed and skips it.
+a hashed CID. Indexers take the block of an identity CID from the CID and should not request it from
+the publisher.
+
+An indexer treats an advertisement whose entries link to a larger identity CID as malformed, and
+does not index the entries from that link onwards. When the link is the `Next` link of a chunk part
+way down the chain, multihashes from the chunks before it may already be indexed, and they stay
+indexed.
 
 As a guide to what fits: an `EntryChunk` with no `Next` link holds one sha2-256 multihash within
 128 bytes in dag-json, or up to three in dag-cbor.
 
-The limit applies to every link an indexer follows, including `PreviousID`. A signed advertisement
-is larger than 128 bytes, so an advertisement cannot be linked by an identity CID.
+The limit applies to every link an indexer follows. For links to advertisements, see
+[Advertisement Transfer](#advertisement-transfer).
 
 Publishers that serve blocks over HTTP should still answer requests for identity CIDs, for indexers
-that request them; see the [IPNI HTTP Provider Specification](IPNI_HTTP_PROVIDER.md#get-ipniv1adcid).
+that request them; see the
+[IPNI HTTP Provider Specification](IPNI_HTTP_PROVIDER.md#identity-cids).
 
 #### Metadata
 
@@ -394,6 +402,11 @@ Older advertisement publishers supported serving advertisement via a data-transf
 There are two parts to the transfer protocol. Serving the advertisement chain itself, and serving a 'head' resource that returns information about the most recent advertisement on the publisher's advertisement chain.
 
 The [IPNI HTTP Provider Specification](https://github.com/ipni/specs/blob/main/IPNI_HTTP_PROVIDER.md#ipni-http-provider) provides a detailed description of advertisement requests and responses.
+
+An advertisement must not be linked by an identity CID: not as the head, not as the `PreviousID` of
+another advertisement, and not in an announcement. A signed advertisement is larger than the 128-byte
+limit for identity CIDs (see [Identity CIDs](#identity-cids)), so such a link can never hold a valid
+advertisement. An indexer that meets one fails the sync of the advertisement chain.
 
 #### HTTP
 

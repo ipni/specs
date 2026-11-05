@@ -36,7 +36,10 @@ paths:
           content:
             text/plain: { }
         '404':
-          description: No results were found for the given CID.
+          description: >-
+            No results were found for the given CID. An indexer holds no
+            records for a CID whose multihash digest is longer than 128 bytes,
+            unless it stored them before it applied that limit.
         '500':
           description: Failure occurred while processing the request.
           content:
@@ -79,7 +82,10 @@ paths:
           content:
             text/plain: { }
         '404':
-          description: No results were found for the given multihash.
+          description: >-
+            No results were found for the given multihash. An indexer holds no
+            records for a multihash whose digest is longer than 128 bytes,
+            unless it stored them before it applied that limit.
         '500':
           description: Failure occurred while processing the request.
           content:
@@ -114,7 +120,10 @@ paths:
           content:
             text/plain: { }
         '404':
-          description: No results were found for any of the given multihashs.
+          description: >-
+            No results were found for any of the given multihashes. An indexer
+            holds no records for a multihash whose digest is longer than 128
+            bytes, unless it stored them before it applied that limit.
         '500':
           description: Failure occurred while processing the request.
           content:

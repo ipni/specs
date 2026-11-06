@@ -43,6 +43,7 @@ retrieval address and protocol.
         + [Entries](#entries)
             - [`EntryChunk` Chain](#entrychunk-chain)
             - [HAMT](#hamt)
+            - [Advertised Multihashes](#advertised-multihashes)
             - [Identity CIDs](#identity-cids)
         + [Metadata](#metadata)
         + [ExtendedProvider](#extendedprovider)
@@ -241,6 +242,9 @@ The Entries data structure can be one of the following:
 * an [IPLD HAMT ADL](https://ipld.io/specs/advanced-data-layouts/hamt/spec), where the keys in the
   map represent the multihashes and the values are simply set to true.
 
+The multihashes that either structure holds are the advertised multihashes; see
+[Advertised Multihashes](#advertised-multihashes).
+
 ##### `EntryChunk` Chain
 
 The `EntryChunk` chain is defined as the following schema:
@@ -272,6 +276,23 @@ the list of multihashes being advertised.
 This is where the keys in the HAMT represent the multihashes being advertised, and the values are
 simply set to `true`.
 
+##### Advertised Multihashes
+
+Each multihash in the `Entries` list of an `EntryChunk`, and each key of a HAMT, is an advertised
+multihash. Publishers must not advertise a multihash whose digest is longer than 128 bytes. An
+indexer must ignore an advertised multihash whose digest is longer, or that is not a valid
+multihash, and index the other multihashes of the advertisement. A multihash is valid when its code
+and its digest length are each a minimal unsigned varint, and the digest length equals the number of
+bytes that follow it. Any code is accepted, including one that is not in the multicodec table.
+
+This differs from a link that is an identity CID over the same limit (see
+[Identity CIDs](#identity-cids)). An advertised multihash is data: an indexer drops it and keeps the
+rest of the advertisement. A link leads to the rest of the entries: an indexer treats the
+advertisement as malformed from that link onwards.
+
+An indexer that stored longer multihashes before it applied this limit may keep them until they are
+removed by an advertisement with `IsRm` set for their `ContextID`, or with their provider.
+
 ##### Identity CIDs
 
 A link in the entries data may be an identity CID (multihash code `0x00`), whose digest is the
@@ -281,7 +302,9 @@ multihash, can then embed its entries in the `Entries` link, and the publisher h
 to store or serve.
 
 This section is about links. A multihash listed in an `EntryChunk`'s `Entries`, or as a HAMT key, is
-an advertised multihash, not a link, and this section does not apply to it.
+an advertised multihash, not a link, and this section does not apply to it. Its digest limit is in
+[Advertised Multihashes](#advertised-multihashes). An advertised identity multihash (code `0x00`) whose digest is at most 128 bytes
+is indexed like any other multihash.
 
 The digest of an identity CID must not be larger than 128 bytes, the default limit of
 [boxo's `verifcid`](https://pkg.go.dev/github.com/ipfs/boxo/verifcid). Larger data must be linked by
@@ -488,6 +511,11 @@ the assigner node's [server](https://github.com/ipni/storetheindex/blob/main/ass
 ### Querying Records
 
 An indexer node can be queried over HTTP for a multihash or a CID. This section provides a summary of the HTTP query APIs. A full OpenAPI specification of the APIs can be found [here](schemas/v1/openapi.yaml).
+
+An indexer does not index a multihash whose digest is longer than 128 bytes (see
+[Advertised Multihashes](#advertised-multihashes)), so it has no provider records for that
+multihash, or for a CID with that multihash, unless it stored it before it applied that limit. A
+[cascaded](#cascading-lookup) routing system may still return providers for it.
 
 #### Cascading Lookup
 
